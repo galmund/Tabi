@@ -89,8 +89,8 @@ The trip row (name and dates) is created on first load, so there's nothing to se
 
 ### 3 · Deploy the app (Vercel)
 
-1. At **[vercel.com/new](https://vercel.com/new)**, import the `japanTrip` GitHub
-   repo. Next.js is detected; leave the build settings alone.
+1. At **[vercel.com/new](https://vercel.com/new)**, import the `galmund/Tabi`
+   GitHub repo. Next.js is detected; leave the build settings alone.
 2. Add two **Environment Variables** (Production *and* Preview):
 
    | Name | Value |
