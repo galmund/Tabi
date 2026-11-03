@@ -14,6 +14,7 @@ import {
   StickyNote,
 } from "lucide-react";
 import { NavBar } from "@/components/NavBar";
+import { PhotoStrip } from "@/components/PhotoViewer";
 import { RouteBar } from "@/components/RouteBar";
 import { IdeaSummary, LegSummary } from "@/components/rows";
 import { Card, CityTag, GroupedList, MapButtons, SectionHeader, Tag } from "@/components/ui";
@@ -242,7 +243,10 @@ function TodaySection({ data, today, dayNumber }: { data: TripData; today: strin
             </div>
           ) : null}
           {todaysLegs.map((leg) => (
-            <LegSummary key={leg.id} leg={leg} />
+            <div key={leg.id} className="space-y-2">
+              <LegSummary leg={leg} />
+              <PhotoStrip title={`${leg.origin} → ${leg.destination}`} photos={leg.photos} />
+            </div>
           ))}
           {activities.map((idea) => (
             <IdeaSummary key={idea.id} idea={idea} />
@@ -285,6 +289,7 @@ function TodaySection({ data, today, dayNumber }: { data: TripData; today: strin
                   Booking no. <span className="select-all text-ink">{tonight.bookingRef}</span>
                 </p>
               ) : null}
+              <PhotoStrip title={tonight.name} photos={tonight.photos} />
               <MapButtons query={tonight.address ?? `${tonight.name}, ${tonight.city.name}, Japan`} />
             </Card>
           ) : inTransit ? (

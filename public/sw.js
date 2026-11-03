@@ -1,4 +1,4 @@
-const VERSION = "tabi-v1";
+const VERSION = "tabi-v2";
 const STATIC_CACHE = `${VERSION}-static`;
 const PAGE_CACHE = `${VERSION}-pages`;
 const ROUTES = ["/", "/days", "/bookings", "/ideas", "/todos", "/settings"];
@@ -58,7 +58,10 @@ async function savePage(path, response) {
 
 async function saveAssetsOf(html) {
   const cache = await caches.open(STATIC_CACHE);
-  const assets = new Set(html.match(/\/_next\/static\/[^"'\s)\\]+/g) ?? []);
+  const assets = new Set([
+    ...(html.match(/\/_next\/static\/[^"'\s)\\]+/g) ?? []),
+    ...(html.match(/\/photos\/[a-z0-9]+/g) ?? []),
+  ]);
   await Promise.all(
     [...assets].map(async (asset) => {
       if (await cache.match(asset)) return;
@@ -97,7 +100,11 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  if (url.pathname.startsWith("/_next/static/") || PRECACHE.includes(url.pathname)) {
+  if (
+    url.pathname.startsWith("/_next/static/") ||
+    url.pathname.startsWith("/photos/") ||
+    PRECACHE.includes(url.pathname)
+  ) {
     event.respondWith(cacheFirst(request));
     return;
   }

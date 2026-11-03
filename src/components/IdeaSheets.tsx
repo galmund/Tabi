@@ -16,6 +16,7 @@ import {
   ToggleRow,
 } from "@/components/form";
 import { IDEA_ICON } from "@/components/icons";
+import { PhotosField } from "@/components/PhotosField";
 import { FormSheet, Sheet } from "@/components/Sheet";
 import { CityDot, MapButtons } from "@/components/ui";
 import { formatDay } from "@/lib/dates";
@@ -96,6 +97,8 @@ export function IdeaSheet({
           mapsUrl={idea.mapsUrl}
         />
       ) : null}
+
+      <PhotosField owner="idea" ownerId={idea?.id} title={idea?.name ?? "Idea"} initial={idea?.photos ?? []} />
 
       <NotesField name="notes" defaultValue={idea?.notes} placeholder="Opening hours, what to order, closest station…" />
     </FormSheet>

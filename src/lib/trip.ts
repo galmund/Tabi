@@ -13,19 +13,32 @@ export const getTrip = cache(async () => {
   return prisma.trip.findUniqueOrThrow({ where: { id: TRIP_ID } });
 });
 
+const photos = {
+  select: { id: true },
+  orderBy: { createdAt: "asc" as const },
+};
+
+export const photoSrc = (id: string) => `/photos/${id}`;
+
+const withSources = <T extends { photos: { id: string }[] }>(row: T) => ({
+  ...row,
+  photos: row.photos.map((photo) => ({ id: photo.id, src: photoSrc(photo.id) })),
+});
+
 export const getTripData = cache(async () => {
   const [trip, cities, stays, legs, ideas, todos, notes] = await Promise.all([
     getTrip(),
     prisma.city.findMany({ orderBy: { createdAt: "asc" } }),
     prisma.stay.findMany({
-      include: { city: true },
+      include: { city: true, photos },
       orderBy: [{ checkIn: "asc" }, { status: "asc" }, { createdAt: "asc" }],
     }),
     prisma.travelLeg.findMany({
+      include: { photos },
       orderBy: [{ departDate: "asc" }, { departTime: "asc" }, { createdAt: "asc" }],
     }),
     prisma.idea.findMany({
-      include: { city: true },
+      include: { city: true, photos },
       orderBy: [{ dayOrder: "asc" }, { createdAt: "asc" }],
     }),
     prisma.todo.findMany({
@@ -38,7 +51,15 @@ export const getTripData = cache(async () => {
     }),
     prisma.dayNote.findMany(),
   ]);
-  return { trip, cities, stays, legs, ideas, todos, notes };
+  return {
+    trip,
+    cities,
+    stays: stays.map(withSources),
+    legs: legs.map(withSources),
+    ideas: ideas.map(withSources),
+    todos,
+    notes,
+  };
 });
 
 export type TripData = Awaited<ReturnType<typeof getTripData>>;

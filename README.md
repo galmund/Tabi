@@ -18,6 +18,7 @@ It answers three questions, fast, from a phone:
 | **Days**     | One card per day from start to end. Each shows that day's travel, the activities (drag to reorder, optional time), a free-text note, and where we sleep — or a red "No hotel booked" that opens a new stay for exactly that night. |
 | **Bookings** | **Stays** (hotels and ryokans: Booked or Option, check-in/out, booking number, link, address, price + currency + payment status, free-cancellation date) and **Travel** (flights, shinkansen, trains, buses, ferries, with times exactly as printed on the ticket). |
 | **Ideas**    | Places, food and things to do, grouped by city. Each has a type, must-do or nice-to-have, a maps link, notes, and a "needs booking in advance" switch that puts a to-do on the list. **Add to day** suggests the days we're in that idea's city first. |
+| **Photos**   | Every stay, journey and idea can hold photos — the room, the entrance, a menu, a ticket's QR code — from the library or the camera. They show as thumbnails in the lists, on Home for tonight's hotel and today's journeys, and open full-screen (swipe down to close, arrows to step through, Delete to remove). |
 | **To-dos**   | A checklist with optional due dates, each optionally linked to a stay, a journey or an idea. |
 | **Settings** | (gear on Home) Trip name and dates, Appearance (Automatic / Light / Dark), and the cities with their colours and Japanese names. |
 
@@ -37,8 +38,8 @@ The rules behind it:
 - **"Today" is the phone's today.** The server renders with the time zone the
   phone last reported, and the page corrects itself on the device — so at 07:00
   in Kyoto it's already the right day.
-- **Works offline for reading.** Every tab is saved on the phone each time the app
-  is opened with a connection. With no signal the last saved copy loads, with an
+- **Works offline for reading.** Every tab — and every photo — is saved on the
+  phone each time the app is opened with a connection. With no signal the last saved copy loads, with an
   *Offline* badge; changes need a connection.
 
 Installs to the iPhone home screen as a standalone PWA (375–430 px first,
@@ -156,7 +157,15 @@ TravelLeg   mode, origin → destination, depart/arrive date + time, carrier,
             bookingRef, seat, url, price, currency, payment, notes
 Todo        title, dueDate, done — optionally linked to a Stay, TravelLeg or Idea
 DayNote     day → text
+Photo       JPEG bytes — belongs to a Stay, TravelLeg or Idea
 ```
+
+- **Photos live in Postgres**, in their own table so listing stays never drags the
+  bytes along. The browser shrinks each one to 1600px / JPEG before upload (a
+  12 MP shot lands around 200–400 KB — big enough for a QR code to stay
+  scannable), so a few hundred photos fit comfortably in Neon's free 0.5 GB.
+  They're served from `/photos/[id]` with an immutable cache header: a photo
+  never changes, a new one gets a new id.
 
 - A to-do created by an idea's *needs booking* switch is marked `fromIdea`;
   turning the switch off removes it (unless it's already done), deleting the

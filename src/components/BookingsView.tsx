@@ -6,7 +6,7 @@ import { BedDouble, Plus, TrainFront } from "lucide-react";
 import { deleteStay, setStayStatus } from "@/app/actions";
 import { LegSheet, StaySheet, type StayDefaults } from "@/components/BookingSheets";
 import { NavBar } from "@/components/NavBar";
-import { LegSummary } from "@/components/rows";
+import { LegSummary, Thumb } from "@/components/rows";
 import { SegmentedTrack, segmentClass } from "@/components/Segmented";
 import { EmptyState, GroupedList, SectionFooter, Tag } from "@/components/ui";
 import { daysBetween, formatDay, formatRange, plural } from "@/lib/dates";
@@ -124,7 +124,10 @@ export function BookingsView({
                   onClick={() => setEditing({ kind: "leg", leg })}
                   className="w-full px-4 py-3 text-left active:bg-fill"
                 >
-                  <LegSummary leg={leg} showDate />
+                  <div className="flex items-center gap-3">
+                    <LegSummary leg={leg} showDate />
+                    {leg.photos[0] ? <Thumb src={leg.photos[0].src} size={44} /> : null}
+                  </div>
                   <MetaLine
                     bookingRef={leg.bookingRef}
                     price={leg.price}
@@ -206,29 +209,36 @@ function StayItem({
     <li className={`${supersededBy ? "opacity-50" : ""} ${pending ? "opacity-40" : ""}`}>
       <div className="flex">
         <span className="my-3 ml-2 w-1 shrink-0 rounded-full" style={{ backgroundColor: stay.city.color }} />
-        <button type="button" onClick={onEdit} className="min-w-0 flex-1 py-3 pl-3 pr-4 text-left active:bg-fill">
-          <p className="flex items-center gap-2">
-            <span className="truncate text-[17px] font-semibold leading-tight">{stay.name}</span>
-            {stay.status === "OPTION" ? <Tag>Option</Tag> : null}
-          </p>
-          <p className="tnum mt-0.5 text-[14px] text-dim">
-            {formatRange(stay.checkIn, stay.checkOut)} · {plural(nights, "night")} · {stay.city.name}
-          </p>
-          {stay.status === "BOOKED" && stay.cancelBy && cancelIn !== null ? (
-            <p className={`tnum mt-0.5 text-[14px] ${cancelIn < 0 ? "text-dim" : cancelIn <= 14 ? "text-orange" : "text-dim"}`}>
-              {cancelIn < 0 ? "Free cancellation has ended" : `Free cancellation until ${formatDay(stay.cancelBy)}`}
+        <button
+          type="button"
+          onClick={onEdit}
+          className="flex min-w-0 flex-1 gap-3 py-3 pl-3 pr-4 text-left active:bg-fill"
+        >
+          <div className="min-w-0 flex-1">
+            <p className="flex items-center gap-2">
+              <span className="truncate text-[17px] font-semibold leading-tight">{stay.name}</span>
+              {stay.status === "OPTION" ? <Tag>Option</Tag> : null}
             </p>
-          ) : null}
-          {supersededBy ? (
-            <p className="mt-0.5 text-[14px] text-dim">Overlaps {supersededBy.name}, which is booked</p>
-          ) : null}
-          <MetaLine
-            bookingRef={stay.bookingRef}
-            price={stay.price}
-            currency={stay.currency}
-            payment={stay.payment}
-            outside={outside}
-          />
+            <p className="tnum mt-0.5 text-[14px] text-dim">
+              {formatRange(stay.checkIn, stay.checkOut)} · {plural(nights, "night")} · {stay.city.name}
+            </p>
+            {stay.status === "BOOKED" && stay.cancelBy && cancelIn !== null ? (
+              <p className={`tnum mt-0.5 text-[14px] ${cancelIn < 0 ? "text-dim" : cancelIn <= 14 ? "text-orange" : "text-dim"}`}>
+                {cancelIn < 0 ? "Free cancellation has ended" : `Free cancellation until ${formatDay(stay.cancelBy)}`}
+              </p>
+            ) : null}
+            {supersededBy ? (
+              <p className="mt-0.5 text-[14px] text-dim">Overlaps {supersededBy.name}, which is booked</p>
+            ) : null}
+            <MetaLine
+              bookingRef={stay.bookingRef}
+              price={stay.price}
+              currency={stay.currency}
+              payment={stay.payment}
+              outside={outside}
+            />
+          </div>
+          {stay.photos[0] ? <Thumb src={stay.photos[0].src} size={52} /> : null}
         </button>
         {stay.status === "OPTION" ? (
           <div className="flex shrink-0 items-center pr-3">

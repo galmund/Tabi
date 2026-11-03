@@ -3,8 +3,17 @@
   "configurations": [
     {
       "name": "tabi",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--", "--port", "3100"],
+      "runtimeExecutable": "/usr/bin/env",
+      "runtimeArgs": [
+        "DATABASE_URL=postgresql://tabi:tabi@localhost:5433/tabi",
+        "DIRECT_URL=postgresql://tabi:tabi@localhost:5433/tabi",
+        "npm",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "3100"
+      ],
       "port": 3100
     }
   ]

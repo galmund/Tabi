@@ -12,6 +12,7 @@ import {
   TextRow,
 } from "@/components/form";
 import { TRAVEL_ICON } from "@/components/icons";
+import { PhotosField } from "@/components/PhotosField";
 import { FormSheet } from "@/components/Sheet";
 import { MapButtons } from "@/components/ui";
 import {
@@ -112,6 +113,8 @@ export function StaySheet({
         <MapButtons query={stay.address ?? `${stay.name}, ${stay.city.name}, Japan`} />
       ) : null}
 
+      <PhotosField owner="stay" ownerId={stay?.id} title={stay?.name ?? "Stay"} initial={stay?.photos ?? []} />
+
       <MoneySection price={stay?.price} currency={stay?.currency} payment={stay?.payment} />
 
       <NotesField name="notes" defaultValue={stay?.notes} placeholder="Breakfast included, room type, how to find the entrance…" />
@@ -168,6 +171,13 @@ export function LegSheet({
         <InputRow label="Seat" name="seat" defaultValue={leg?.seat} placeholder="Car 7, 12A–B" />
         <InputRow label="Link" name="url" type="url" defaultValue={leg?.url} placeholder="smart-ex.jp/…" />
       </Section>
+
+      <PhotosField
+        owner="leg"
+        ownerId={leg?.id}
+        title={leg ? `${leg.origin} → ${leg.destination}` : "Travel"}
+        initial={leg?.photos ?? []}
+      />
 
       <MoneySection price={leg?.price} currency={leg?.currency} payment={leg?.payment} />
 

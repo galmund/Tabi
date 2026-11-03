@@ -88,7 +88,8 @@ model Stay {
   notes        String?
   createdAt    DateTime   @default(now())
 
-  todos Todo[]
+  todos  Todo[]
+  photos Photo[]
 
   @@index([checkIn])
 }
@@ -112,7 +113,8 @@ model TravelLeg {
   notes       String?
   createdAt   DateTime   @default(now())
 
-  todos Todo[]
+  todos  Todo[]
+  photos Photo[]
 
   @@index([departDate])
 }
@@ -132,7 +134,8 @@ model Idea {
   dayOrder     Int      @default(0)
   createdAt    DateTime @default(now())
 
-  todos Todo[]
+  todos  Todo[]
+  photos Photo[]
 
   @@index([day])
 }
@@ -156,4 +159,22 @@ model Todo {
 model DayNote {
   day  String @id
   text String
+}
+
+model Photo {
+  id          String     @id @default(cuid())
+  data        Bytes
+  contentType String
+  byteSize    Int
+  createdAt   DateTime   @default(now())
+  stayId      String?
+  stay        Stay?      @relation(fields: [stayId], references: [id], onDelete: Cascade)
+  legId       String?
+  leg         TravelLeg? @relation(fields: [legId], references: [id], onDelete: Cascade)
+  ideaId      String?
+  idea        Idea?      @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+
+  @@index([stayId])
+  @@index([legId])
+  @@index([ideaId])
 }

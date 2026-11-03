@@ -45,11 +45,16 @@ export function IdeaSummary({
 }) {
   const Icon = IDEA_ICON[idea.kind];
   const detail = [idea.time, showCity ? idea.city?.name : null].filter(Boolean).join(" · ");
+  const cover = idea.photos[0];
   return (
     <div className="flex min-w-0 flex-1 items-center gap-3">
-      <IconCircle color={IDEA_KIND_COLOR[idea.kind]}>
-        <Icon className="h-[18px] w-[18px]" />
-      </IconCircle>
+      {cover ? (
+        <Thumb src={cover.src} size={36} />
+      ) : (
+        <IconCircle color={IDEA_KIND_COLOR[idea.kind]}>
+          <Icon className="h-[18px] w-[18px]" />
+        </IconCircle>
+      )}
       <div className="min-w-0 flex-1">
         <p className="flex items-center gap-1.5 text-[17px] leading-tight">
           <span className="truncate">{idea.name}</span>
@@ -65,5 +70,20 @@ export function IdeaSummary({
         ) : null}
       </div>
     </div>
+  );
+}
+
+export function Thumb({ src, size }: { src: string; size: number }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt=""
+      loading="lazy"
+      width={size}
+      height={size}
+      className="shrink-0 bg-elev2 object-cover"
+      style={{ width: size, height: size, borderRadius: Math.round(size * 0.28) }}
+    />
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { DeviceSync } from "@/components/DeviceSync";
+import { PhotoViewerProvider } from "@/components/PhotoViewer";
 import { TabBar } from "@/components/TabBar";
 import { getThemeChoice } from "@/lib/trip";
 import "./globals.css";
@@ -48,8 +49,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en" data-theme={theme === "auto" ? undefined : theme}>
       <body className="min-h-dvh">
-        <main className="mx-auto w-full max-w-lg px-4">{children}</main>
-        <TabBar />
+        <PhotoViewerProvider>
+          <main className="mx-auto w-full max-w-lg px-4">{children}</main>
+          <TabBar />
+        </PhotoViewerProvider>
         <DeviceSync />
       </body>
     </html>

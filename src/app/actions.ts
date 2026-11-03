@@ -13,7 +13,7 @@ import {
   isTravelMode,
 } from "@/lib/labels";
 import { THEME_COOKIE, TIME_ZONE_COOKIE, type ThemeChoice } from "@/lib/cookies";
-import { TRIP_ID } from "@/lib/trip";
+import { photoSrc, TRIP_ID } from "@/lib/trip";
 
 export type ActionResult = { ok: true; message?: string } | { ok: false; error: string };
 
@@ -409,5 +409,46 @@ export async function deleteCity(id: string): Promise<ActionResult> {
     const stays = await prisma.stay.count({ where: { cityId: id } });
     if (stays > 0) throw new InvalidInput("Stays still use this city.");
     await prisma.city.delete({ where: { id } });
+  });
+}
+
+const MAX_PHOTO_BYTES = 3.5 * 1024 * 1024;
+const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const PHOTO_OWNERS = { stay: "stayId", leg: "legId", idea: "ideaId" } as const;
+
+export type PhotoOwner = keyof typeof PHOTO_OWNERS;
+
+export type UploadResult = { ok: true; photo: { id: string; src: string } } | { ok: false; error: string };
+
+export async function uploadPhoto(form: FormData): Promise<UploadResult> {
+  const owner = form.get("owner");
+  const ownerId = form.get("ownerId");
+  const file = form.get("photo");
+  if (typeof owner !== "string" || !(owner in PHOTO_OWNERS) || typeof ownerId !== "string" || !ownerId) {
+    return { ok: false, error: "Save it first, then add photos." };
+  }
+  if (!(file instanceof File) || file.size === 0) return { ok: false, error: "No photo was selected." };
+  if (!PHOTO_TYPES.includes(file.type)) return { ok: false, error: "Photos must be JPEG, PNG or WebP." };
+  if (file.size > MAX_PHOTO_BYTES) {
+    return { ok: false, error: `That photo is ${(file.size / 1024 / 1024).toFixed(1)} MB — the limit is 3.5 MB.` };
+  }
+
+  const data = Buffer.from(await file.arrayBuffer());
+  const photo = await prisma.photo.create({
+    data: {
+      data,
+      contentType: file.type,
+      byteSize: data.byteLength,
+      [PHOTO_OWNERS[owner as PhotoOwner]]: ownerId,
+    },
+    select: { id: true },
+  });
+  refresh();
+  return { ok: true, photo: { id: photo.id, src: photoSrc(photo.id) } };
+}
+
+export async function deletePhoto(id: string): Promise<ActionResult> {
+  return attempt(async () => {
+    await prisma.photo.deleteMany({ where: { id } });
   });
 }
