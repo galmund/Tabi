@@ -1,0 +1,306 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #000000;
+  --color-elev: #1c1c1e;
+  --color-elev2: #2c2c2e;
+  --color-elev3: #3a3a3c;
+  --color-sheet: #1c1c1e;
+  --color-group: #2c2c2e;
+  --color-thumb: #636366;
+  --color-bar: rgb(18 18 20 / 0.78);
+  --color-fill: rgb(118 118 128 / 0.24);
+  --color-line: rgb(84 84 88 / 0.55);
+  --color-ink: #ffffff;
+  --color-dim: rgb(235 235 245 / 0.6);
+  --color-faint: rgb(235 235 245 / 0.3);
+  --color-accent: #ff6340;
+  --color-on-accent: #ffffff;
+  --color-good: #30d158;
+  --color-bad: #ff453a;
+  --color-orange: #ff9f0a;
+  --color-yellow: #ffd60a;
+
+  --radius-card: 18px;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-rounded: "SF Pro Rounded", ui-rounded, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --tabbar-h: 56px;
+  --glow: 26%;
+  --shadow-lift: 0 16px 40px rgb(0 0 0 / 0.6);
+  --shadow-thumb: 0 3px 8px rgb(0 0 0 / 0.25), 0 1px 1px rgb(0 0 0 / 0.15);
+  --backdrop: rgb(0 0 0 / 0.55);
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --color-bg: #f2f2f7;
+    --color-elev: #ffffff;
+    --color-elev2: #e9e9ee;
+    --color-elev3: #d1d1d6;
+    --color-sheet: #f2f2f7;
+    --color-group: #ffffff;
+    --color-thumb: #ffffff;
+    --color-bar: rgb(249 249 249 / 0.8);
+    --color-fill: rgb(118 118 128 / 0.12);
+    --color-line: rgb(60 60 67 / 0.2);
+    --color-ink: #000000;
+    --color-dim: rgb(60 60 67 / 0.62);
+    --color-faint: rgb(60 60 67 / 0.3);
+    --color-accent: #d23a17;
+    --color-good: #248a3d;
+    --color-bad: #d70015;
+    --color-orange: #c45c00;
+    --color-yellow: #a17700;
+    --glow: 12%;
+    --shadow-lift: 0 16px 40px rgb(0 0 0 / 0.16);
+    --shadow-thumb: 0 3px 8px rgb(0 0 0 / 0.12), 0 1px 1px rgb(0 0 0 / 0.06);
+    --backdrop: rgb(0 0 0 / 0.28);
+    color-scheme: light;
+  }
+}
+
+:root[data-theme="light"] {
+  --color-bg: #f2f2f7;
+  --color-elev: #ffffff;
+  --color-elev2: #e9e9ee;
+  --color-elev3: #d1d1d6;
+  --color-sheet: #f2f2f7;
+  --color-group: #ffffff;
+  --color-thumb: #ffffff;
+  --color-bar: rgb(249 249 249 / 0.8);
+  --color-fill: rgb(118 118 128 / 0.12);
+  --color-line: rgb(60 60 67 / 0.2);
+  --color-ink: #000000;
+  --color-dim: rgb(60 60 67 / 0.62);
+  --color-faint: rgb(60 60 67 / 0.3);
+  --color-accent: #d23a17;
+  --color-good: #248a3d;
+  --color-bad: #d70015;
+  --color-orange: #c45c00;
+  --color-yellow: #a17700;
+  --glow: 12%;
+  --shadow-lift: 0 16px 40px rgb(0 0 0 / 0.16);
+  --shadow-thumb: 0 3px 8px rgb(0 0 0 / 0.12), 0 1px 1px rgb(0 0 0 / 0.06);
+  --backdrop: rgb(0 0 0 / 0.28);
+  color-scheme: light;
+}
+
+html {
+  background: var(--color-bg);
+  overscroll-behavior-y: none;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  isolation: isolate;
+  padding-bottom: calc(var(--tabbar-h) + var(--safe-bottom) + 24px);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: min(62vh, 560px);
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    120% 75% at 50% -12%,
+    color-mix(in srgb, var(--color-accent) var(--glow), transparent),
+    transparent 70%
+  );
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+button {
+  user-select: none;
+}
+
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
+input[type="date"],
+input[type="time"] {
+  min-height: 1.5em;
+}
+
+input[type="date"]::-webkit-date-and-time-value,
+input[type="time"]::-webkit-date-and-time-value {
+  text-align: right;
+}
+
+@utility tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+@utility num {
+  font-family: var(--font-rounded);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility pressable {
+  transition:
+    transform 160ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    background-color 160ms ease,
+    opacity 160ms ease;
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+@utility separated {
+  & > * {
+    position: relative;
+  }
+  & > * + *::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: var(--inset, 16px);
+    height: 0.5px;
+    background: var(--color-line);
+    pointer-events: none;
+  }
+}
+
+@utility input {
+  width: 100%;
+  background: transparent;
+  color: var(--color-ink);
+  outline: none;
+  font-size: 17px;
+
+  &::placeholder {
+    color: var(--color-faint);
+  }
+}
+
+@utility hatched {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--color-bad) 55%, transparent) 0 4px,
+    color-mix(in srgb, var(--color-bad) 22%, transparent) 4px 8px
+  );
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@utility rise-in {
+  animation: rise-in 320ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise-in {
+    animation: none;
+  }
+}
+
+.sheet {
+  margin: auto auto 0;
+  width: 100%;
+  max-width: 32rem;
+  max-height: calc(100dvh - var(--safe-top) - 10px);
+  border: 0;
+  padding: 0;
+  color: var(--color-ink);
+  background: var(--color-sheet);
+  border-radius: 16px 16px 0 0;
+  overflow: hidden;
+  display: none;
+  flex-direction: column;
+  transform: translateY(0);
+  transition:
+    transform 340ms cubic-bezier(0.2, 0.9, 0.3, 1),
+    display 340ms allow-discrete,
+    overlay 340ms allow-discrete;
+}
+
+.sheet[open] {
+  display: flex;
+}
+
+.sheet:not([open]) {
+  pointer-events: none;
+  transform: translateY(100%);
+}
+
+@starting-style {
+  .sheet[open] {
+    transform: translateY(100%);
+  }
+}
+
+.sheet::backdrop {
+  background: rgb(0 0 0 / 0);
+  backdrop-filter: blur(0px);
+  transition:
+    background-color 340ms ease,
+    backdrop-filter 340ms ease,
+    display 340ms allow-discrete,
+    overlay 340ms allow-discrete;
+}
+
+.sheet[open]::backdrop {
+  background: color-mix(in srgb, var(--backdrop) calc(100% * (1 - var(--drag, 0))), transparent);
+  backdrop-filter: blur(calc(6px * (1 - var(--drag, 0))));
+}
+
+@starting-style {
+  .sheet[open]::backdrop {
+    background: rgb(0 0 0 / 0);
+    backdrop-filter: blur(0px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet,
+  .sheet::backdrop {
+    transition-duration: 1ms;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  nav.fixed,
+  header > [aria-hidden] {
+    background: var(--color-elev);
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --color-line: rgb(127 127 135 / 0.6);
+  }
+}

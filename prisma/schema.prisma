@@ -1,0 +1,159 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum StayStatus {
+  BOOKED
+  OPTION
+}
+
+enum TravelMode {
+  FLIGHT
+  SHINKANSEN
+  TRAIN
+  BUS
+  FERRY
+  CAR
+  OTHER
+}
+
+enum IdeaKind {
+  SIGHT
+  FOOD
+  SHOPPING
+  ONSEN
+  EXPERIENCE
+  NIGHTLIFE
+}
+
+enum Priority {
+  MUST
+  NICE
+}
+
+enum Currency {
+  JPY
+  ILS
+  USD
+}
+
+enum Payment {
+  PAID
+  DEPOSIT
+  PAY_LATER
+}
+
+/// Dates are ISO days ("2027-09-23") and times are local wall-clock "HH:MM",
+/// exactly as printed on the booking, so nothing ever shifts across time zones.
+model Trip {
+  id        String @id @default("trip")
+  name      String @default("Japan 2027")
+  startDate String @default("2027-09-23")
+  endDate   String @default("2027-10-26")
+}
+
+model City {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  nameJa    String?
+  color     String
+  createdAt DateTime @default(now())
+
+  stays Stay[]
+  ideas Idea[]
+}
+
+model Stay {
+  id           String     @id @default(cuid())
+  name         String
+  status       StayStatus @default(BOOKED)
+  cityId       String
+  city         City       @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  checkIn      String
+  checkOut     String
+  checkInTime  String     @default("15:00")
+  checkOutTime String     @default("11:00")
+  address      String?
+  bookingRef   String?
+  url          String?
+  price        Float?
+  currency     Currency?
+  payment      Payment?
+  cancelBy     String?
+  notes        String?
+  createdAt    DateTime   @default(now())
+
+  todos Todo[]
+
+  @@index([checkIn])
+}
+
+model TravelLeg {
+  id          String     @id @default(cuid())
+  mode        TravelMode
+  origin      String
+  destination String
+  departDate  String
+  departTime  String?
+  arriveDate  String?
+  arriveTime  String?
+  carrier     String?
+  bookingRef  String?
+  seat        String?
+  url         String?
+  price       Float?
+  currency    Currency?
+  payment     Payment?
+  notes       String?
+  createdAt   DateTime   @default(now())
+
+  todos Todo[]
+
+  @@index([departDate])
+}
+
+model Idea {
+  id           String   @id @default(cuid())
+  name         String
+  kind         IdeaKind @default(SIGHT)
+  priority     Priority @default(NICE)
+  cityId       String?
+  city         City?    @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  mapsUrl      String?
+  notes        String?
+  needsBooking Boolean  @default(false)
+  day          String?
+  time         String?
+  dayOrder     Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  todos Todo[]
+
+  @@index([day])
+}
+
+model Todo {
+  id        String     @id @default(cuid())
+  title     String
+  dueDate   String?
+  done      Boolean    @default(false)
+  doneAt    DateTime?
+  fromIdea  Boolean    @default(false)
+  stayId    String?
+  stay      Stay?      @relation(fields: [stayId], references: [id], onDelete: SetNull)
+  legId     String?
+  leg       TravelLeg? @relation(fields: [legId], references: [id], onDelete: SetNull)
+  ideaId    String?
+  idea      Idea?      @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+}
+
+model DayNote {
+  day  String @id
+  text String
+}
