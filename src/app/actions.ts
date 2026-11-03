@@ -112,6 +112,35 @@ async function cityId(form: FormData, key = "city"): Promise<string | null> {
   return created.id;
 }
 
+const MAX_PHOTO_BYTES = 3.5 * 1024 * 1024;
+const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const PHOTO_OWNERS = { stay: "stayId", leg: "legId", idea: "ideaId" } as const;
+
+export type PhotoOwner = keyof typeof PHOTO_OWNERS;
+
+function photoProblem(file: File): string | null {
+  if (!PHOTO_TYPES.includes(file.type)) return "Photos must be JPEG, PNG or WebP.";
+  if (file.size > MAX_PHOTO_BYTES) {
+    return `That photo is ${(file.size / 1024 / 1024).toFixed(1)} MB — the limit is 3.5 MB.`;
+  }
+  return null;
+}
+
+async function newPhotos(form: FormData) {
+  const files = form.getAll("newPhotos").filter((value): value is File => value instanceof File && value.size > 0);
+  for (const file of files) {
+    const problem = photoProblem(file);
+    if (problem) throw new InvalidInput(problem);
+  }
+  const photos = await Promise.all(
+    files.map(async (file) => {
+      const data = Buffer.from(await file.arrayBuffer());
+      return { data, contentType: file.type, byteSize: data.byteLength };
+    })
+  );
+  return photos.length > 0 ? { photos: { create: photos } } : {};
+}
+
 export async function rememberTimeZone(timeZone: string): Promise<void> {
   if (!/^[A-Za-z_]+(\/[A-Za-z0-9_+-]+)*$/.test(timeZone)) return;
   const store = await cookies();
@@ -174,7 +203,7 @@ export async function saveStay(_: ActionResult | null, form: FormData): Promise<
     };
 
     if (id) await prisma.stay.update({ where: { id }, data });
-    else await prisma.stay.create({ data });
+    else await prisma.stay.create({ data: { ...data, ...(await newPhotos(form)) } });
     return id ? "Stay saved" : "Stay added";
   });
 }
@@ -219,7 +248,7 @@ export async function saveLeg(_: ActionResult | null, form: FormData): Promise<A
     };
 
     if (id) await prisma.travelLeg.update({ where: { id }, data });
-    else await prisma.travelLeg.create({ data });
+    else await prisma.travelLeg.create({ data: { ...data, ...(await newPhotos(form)) } });
     return id ? "Travel saved" : "Travel added";
   });
 }
@@ -286,6 +315,7 @@ export async function saveIdea(_: ActionResult | null, form: FormData): Promise<
       const created = await prisma.idea.create({
         data: {
           ...data,
+          ...(await newPhotos(form)),
           day: scheduledDay,
           dayOrder: scheduledDay ? await nextDayOrder(scheduledDay) : 0,
         },
@@ -412,12 +442,6 @@ export async function deleteCity(id: string): Promise<ActionResult> {
   });
 }
 
-const MAX_PHOTO_BYTES = 3.5 * 1024 * 1024;
-const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
-const PHOTO_OWNERS = { stay: "stayId", leg: "legId", idea: "ideaId" } as const;
-
-export type PhotoOwner = keyof typeof PHOTO_OWNERS;
-
 export type UploadResult = { ok: true; photo: { id: string; src: string } } | { ok: false; error: string };
 
 export async function uploadPhoto(form: FormData): Promise<UploadResult> {
@@ -428,10 +452,8 @@ export async function uploadPhoto(form: FormData): Promise<UploadResult> {
     return { ok: false, error: "Save it first, then add photos." };
   }
   if (!(file instanceof File) || file.size === 0) return { ok: false, error: "No photo was selected." };
-  if (!PHOTO_TYPES.includes(file.type)) return { ok: false, error: "Photos must be JPEG, PNG or WebP." };
-  if (file.size > MAX_PHOTO_BYTES) {
-    return { ok: false, error: `That photo is ${(file.size / 1024 / 1024).toFixed(1)} MB — the limit is 3.5 MB.` };
-  }
+  const problem = photoProblem(file);
+  if (problem) return { ok: false, error: problem };
 
   const data = Buffer.from(await file.arrayBuffer());
   const photo = await prisma.photo.create({
