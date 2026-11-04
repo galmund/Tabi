@@ -64,8 +64,9 @@ model City {
   color     String
   createdAt DateTime @default(now())
 
-  stays Stay[]
-  ideas Idea[]
+  stays  Stay[]
+  ideas  Idea[]
+  wishes WishItem[]
 }
 
 model Stay {
@@ -173,8 +174,28 @@ model Photo {
   leg         TravelLeg? @relation(fields: [legId], references: [id], onDelete: Cascade)
   ideaId      String?
   idea        Idea?      @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  wishId      String?
+  wish        WishItem?  @relation(fields: [wishId], references: [id], onDelete: Cascade)
 
   @@index([stayId])
   @@index([legId])
   @@index([ideaId])
+  @@index([wishId])
+}
+
+model WishItem {
+  id        String    @id @default(cuid())
+  name      String
+  forWhom   String?
+  cityId    String?
+  city      City?     @relation(fields: [cityId], references: [id], onDelete: SetNull)
+  price     Float?
+  currency  Currency?
+  url       String?
+  notes     String?
+  bought    Boolean   @default(false)
+  boughtAt  DateTime?
+  createdAt DateTime  @default(now())
+
+  photos Photo[]
 }

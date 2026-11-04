@@ -114,7 +114,7 @@ async function cityId(form: FormData, key = "city"): Promise<string | null> {
 
 const MAX_PHOTO_BYTES = 3.5 * 1024 * 1024;
 const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
-const PHOTO_OWNERS = { stay: "stayId", leg: "legId", idea: "ideaId" } as const;
+const PHOTO_OWNERS = { stay: "stayId", leg: "legId", idea: "ideaId", wish: "wishId" } as const;
 
 export type PhotoOwner = keyof typeof PHOTO_OWNERS;
 
@@ -394,6 +394,37 @@ export async function deleteTodo(id: string): Promise<ActionResult> {
     if (todo.fromIdea && todo.ideaId) {
       await prisma.idea.update({ where: { id: todo.ideaId }, data: { needsBooking: false } });
     }
+  });
+}
+
+export async function saveWish(_: ActionResult | null, form: FormData): Promise<ActionResult> {
+  return attempt(async () => {
+    const id = text(form, "id", 40);
+    const { price, currency } = money(form);
+    const data = {
+      name: required(form, "name", "Name", 120),
+      forWhom: text(form, "forWhom", 60),
+      cityId: await cityId(form),
+      price,
+      currency: price !== null ? (currency ?? "JPY") : null,
+      url: url(form, "url"),
+      notes: text(form, "notes", 2000),
+    };
+    if (id) await prisma.wishItem.update({ where: { id }, data });
+    else await prisma.wishItem.create({ data: { ...data, ...(await newPhotos(form)) } });
+    return id ? "Saved" : "Added to the wish list";
+  });
+}
+
+export async function setWishBought(id: string, bought: boolean): Promise<ActionResult> {
+  return attempt(async () => {
+    await prisma.wishItem.update({ where: { id }, data: { bought, boughtAt: bought ? new Date() : null } });
+  });
+}
+
+export async function deleteWish(id: string): Promise<ActionResult> {
+  return attempt(async () => {
+    await prisma.wishItem.delete({ where: { id } });
   });
 }
 
