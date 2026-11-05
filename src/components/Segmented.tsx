@@ -13,7 +13,7 @@ export function SegmentedTrack({
     <div
       role="group"
       aria-label={label}
-      className={`grid auto-cols-fr grid-flow-col gap-0.5 rounded-[10px] bg-fill p-[2px] ${className}`}
+      className={`grid auto-cols-fr lg:max-w-sm grid-flow-col gap-0.5 rounded-[10px] bg-fill p-[2px] ${className}`}
     >
       {children}
     </div>

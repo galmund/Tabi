@@ -55,6 +55,7 @@ export function HomeView({ data, serverToday }: { data: TripData; serverToday: s
   const overdue = todos.filter((todo) => !todo.done && todo.dueDate && todo.dueDate < today);
   const openTodos = todos.filter((todo) => !todo.done).length;
   const planned = ideas.filter((idea) => idea.day).length;
+  const showMissing = missing.length > 0 && phase !== "after";
 
   const eyebrow =
     phase === "before"
@@ -72,28 +73,28 @@ export function HomeView({ data, serverToday }: { data: TripData; serverToday: s
           <Link
             href="/settings"
             aria-label="Settings"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-accent active:bg-fill"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-accent active:bg-fill lg:hidden"
           >
             <Settings className="h-[22px] w-[22px]" />
           </Link>
         }
       />
 
-      <div className="rise-in space-y-8">
+      <div className="rise-in space-y-8 lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-6 lg:gap-y-8 lg:space-y-0">
         {phase === "during" ? (
           <TodaySection data={data} today={today} dayNumber={dayNumber} />
         ) : phase === "before" ? (
           <Countdown days={daysBetween(today, trip.startDate)} startDate={trip.startDate} endDate={trip.endDate} nights={states.length} />
         ) : null}
 
-        <section>
+        <section className="lg:col-span-2">
           <SectionHeader title="Route" trailing={`${covered}/${states.length} nights`} />
           <Card>
             <RouteBar segments={routeSegments(states)} startDate={trip.startDate} endDate={trip.endDate} />
           </Card>
         </section>
 
-        {missing.length > 0 && phase !== "after" ? (
+        {showMissing ? (
           <section>
             <SectionHeader
               title="No hotel yet"
@@ -123,7 +124,7 @@ export function HomeView({ data, serverToday }: { data: TripData; serverToday: s
           </section>
         ) : null}
 
-        <section>
+        <section className={showMissing ? undefined : "lg:col-span-2"}>
           <SectionHeader title="Coming up" />
           {upcoming.length + overdue.length === 0 ? (
             <Card className="flex items-center gap-3 text-[15px] text-dim">
@@ -167,7 +168,11 @@ export function HomeView({ data, serverToday }: { data: TripData; serverToday: s
           )}
         </section>
 
-        <section className="grid grid-cols-3 gap-2">
+        <section
+          className={`grid grid-cols-3 gap-2 lg:gap-3 ${
+            phase === "before" ? "lg:col-start-2 lg:row-start-1 lg:self-stretch" : "lg:col-span-2"
+          }`}
+        >
           <Stat href="/bookings" icon={<Moon className="h-5 w-5" />} value={`${covered}/${states.length}`} label="Nights covered" />
           <Stat href="/ideas" icon={<Lightbulb className="h-5 w-5" />} value={`${planned}/${ideas.length}`} label="Ideas planned" />
           <Stat href="/todos" icon={<ListChecks className="h-5 w-5" />} value={String(openTodos)} label="To-dos open" />
@@ -196,7 +201,7 @@ function Countdown({
   nights: number;
 }) {
   return (
-    <Card className="flex items-center gap-4 py-5">
+    <Card className="flex items-center gap-4 py-5 lg:self-stretch">
       <div className="text-center">
         <p className="num text-[44px] font-bold leading-none text-accent">{days}</p>
         <p className="mt-1 text-[13px] font-medium text-dim">{days === 1 ? "day" : "days"}</p>

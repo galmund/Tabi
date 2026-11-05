@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CalendarCheck, CalendarPlus, Lightbulb, Plus, Ticket } from "lucide-react";
+import { EditButton, IdeaDetail } from "@/components/DetailSheets";
 import { DayPickerSheet, IdeaSheet } from "@/components/IdeaSheets";
 import { NavBar } from "@/components/NavBar";
 import { IdeaSummary } from "@/components/rows";
@@ -10,7 +11,12 @@ import { formatDay, formatShortDay, plural } from "@/lib/dates";
 import { dayOptions } from "@/lib/plan";
 import type { CityRow, IdeaRow, TripData } from "@/lib/trip";
 
-type Editing = { kind: "edit"; idea: IdeaRow } | { kind: "new" } | { kind: "schedule"; idea: IdeaRow } | null;
+type Editing =
+  | { kind: "edit"; idea: IdeaRow; fromDetail?: boolean }
+  | { kind: "view"; id: string }
+  | { kind: "new" }
+  | { kind: "schedule"; idea: IdeaRow }
+  | null;
 
 const ALL = "all";
 const NO_CITY = "none";
@@ -28,6 +34,7 @@ export function IdeasView({ data }: { data: TripData }) {
 
   const filterCities = cities.filter((city) => ideas.some((idea) => idea.cityId === city.id));
   const unplanned = ideas.filter((idea) => !idea.day).length;
+  const viewing = editing?.kind === "view" ? ideas.find((idea) => idea.id === editing.id) : undefined;
 
   return (
     <>
@@ -47,7 +54,7 @@ export function IdeasView({ data }: { data: TripData }) {
       />
 
       {filterCities.length > 0 ? (
-        <div className="no-scrollbar -mx-4 mb-5 flex gap-1.5 overflow-x-auto px-4">
+        <div className="no-scrollbar -mx-4 mb-5 flex gap-1.5 overflow-x-auto px-4 lg:mx-0 lg:mb-6 lg:flex-wrap lg:px-0">
           <FilterChip active={filter === ALL} onClick={() => setFilter(ALL)}>
             All
           </FilterChip>
@@ -64,7 +71,7 @@ export function IdeasView({ data }: { data: TripData }) {
         </div>
       ) : null}
 
-      <div className="rise-in space-y-8">
+      <div className="rise-in space-y-8 lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-6 lg:gap-y-8 lg:space-y-0 lg:[&>:only-child]:col-span-2">
         {ideas.length === 0 ? (
           <EmptyState
             icon={<Lightbulb className="h-6 w-6" />}
@@ -91,7 +98,7 @@ export function IdeasView({ data }: { data: TripData }) {
                   <li key={idea.id} className="flex items-center pr-2">
                     <button
                       type="button"
-                      onClick={() => setEditing({ kind: "edit", idea })}
+                      onClick={() => setEditing({ kind: "view", id: idea.id })}
                       className="flex min-w-0 flex-1 items-center py-2.5 pl-4 text-left active:bg-fill"
                     >
                       <IdeaSummary
@@ -126,6 +133,7 @@ export function IdeasView({ data }: { data: TripData }) {
                         </>
                       )}
                     </button>
+                    <EditButton label={`Edit ${idea.name}`} onClick={() => setEditing({ kind: "edit", idea })} />
                   </li>
                 ))}
               </GroupedList>
@@ -135,7 +143,20 @@ export function IdeasView({ data }: { data: TripData }) {
       </div>
 
       {editing?.kind === "edit" ? (
-        <IdeaSheet key={editing.idea.id} idea={editing.idea} cities={cities} onDone={() => setEditing(null)} />
+        <IdeaSheet
+          key={editing.idea.id}
+          idea={editing.idea}
+          cities={cities}
+          onDone={() => setEditing(editing.fromDetail ? { kind: "view", id: editing.idea.id } : null)}
+        />
+      ) : null}
+      {viewing ? (
+        <IdeaDetail
+          key={viewing.id}
+          idea={viewing}
+          onEdit={() => setEditing({ kind: "edit", idea: viewing, fromDetail: true })}
+          onDone={() => setEditing(null)}
+        />
       ) : null}
       {editing?.kind === "new" ? (
         <IdeaSheet

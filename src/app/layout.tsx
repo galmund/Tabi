@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { DeviceSync } from "@/components/DeviceSync";
 import { PhotoViewerProvider } from "@/components/PhotoViewer";
-import { TabBar } from "@/components/TabBar";
-import { getThemeChoice } from "@/lib/trip";
+import { Sidebar, TabBar } from "@/components/TabBar";
+import { getThemeChoice, getTrip } from "@/lib/trip";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -45,12 +45,21 @@ export async function generateViewport(): Promise<Viewport> {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const theme = await getThemeChoice();
+  const [theme, tripName] = await Promise.all([
+    getThemeChoice(),
+    getTrip().then(
+      (trip) => trip.name,
+      () => "Japan trip"
+    ),
+  ]);
   return (
     <html lang="en" data-theme={theme === "auto" ? undefined : theme}>
       <body className="min-h-dvh">
         <PhotoViewerProvider>
-          <main className="mx-auto w-full max-w-lg px-4">{children}</main>
+          <Sidebar tripName={tripName} />
+          <div className="lg:pl-[var(--sidebar-w)]">
+            <main className="mx-auto w-full max-w-lg px-4 lg:max-w-5xl lg:px-8">{children}</main>
+          </div>
           <TabBar />
         </PhotoViewerProvider>
         <DeviceSync />

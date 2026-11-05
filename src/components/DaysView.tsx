@@ -5,6 +5,7 @@ import Link from "next/link";
 import { BedDouble, CalendarDays, Plane, Plus, StickyNote } from "lucide-react";
 import { reorderDay, saveDayNote, scheduleIdea } from "@/app/actions";
 import { LegSheet } from "@/components/BookingSheets";
+import { EditButton, IdeaDetail, LegDetail } from "@/components/DetailSheets";
 import { DayPickerSheet, IdeaSheet } from "@/components/IdeaSheets";
 import { NavBar } from "@/components/NavBar";
 import { IdeaSummary, LegSummary } from "@/components/rows";
@@ -18,11 +19,13 @@ import { bookedStayOn, dayOptions, overnightLegOn, type DayOption } from "@/lib/
 import type { IdeaRow, LegRow, TripData } from "@/lib/trip";
 
 type Editing =
-  | { kind: "idea"; idea: IdeaRow }
+  | { kind: "idea"; idea: IdeaRow; fromDetail?: boolean }
+  | { kind: "view-idea"; id: string }
+  | { kind: "view-leg"; id: string }
   | { kind: "move"; idea: IdeaRow }
   | { kind: "new-idea"; day: string; city?: string }
   | { kind: "add"; day: DayOption }
-  | { kind: "leg"; leg: LegRow }
+  | { kind: "leg"; leg: LegRow; fromDetail?: boolean }
   | null;
 
 export function DaysView({ data, serverToday }: { data: TripData; serverToday: string }) {
@@ -30,6 +33,8 @@ export function DaysView({ data, serverToday }: { data: TripData; serverToday: s
   const { trip, stays, legs, ideas, notes, cities } = data;
   const days = dayOptions(trip, stays, ideas);
   const [editing, setEditing] = useState<Editing>(null);
+  const viewingIdea = editing?.kind === "view-idea" ? ideas.find((idea) => idea.id === editing.id) : undefined;
+  const viewingLeg = editing?.kind === "view-leg" ? legs.find((leg) => leg.id === editing.id) : undefined;
 
   useEffect(() => {
     if (window.location.hash) return;
@@ -42,7 +47,7 @@ export function DaysView({ data, serverToday }: { data: TripData; serverToday: s
     <>
       <NavBar title="Days" eyebrow={`${formatRange(trip.startDate, trip.endDate)} · ${plural(days.length, "day")}`} />
 
-      <div className="rise-in space-y-4">
+      <div className="rise-in space-y-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-5 lg:space-y-0">
         {days.map((option) => (
           <DayCard
             key={option.day}
@@ -60,7 +65,28 @@ export function DaysView({ data, serverToday }: { data: TripData; serverToday: s
       </div>
 
       {editing?.kind === "idea" ? (
-        <IdeaSheet key={editing.idea.id} idea={editing.idea} cities={cities} onDone={() => setEditing(null)} />
+        <IdeaSheet
+          key={editing.idea.id}
+          idea={editing.idea}
+          cities={cities}
+          onDone={() => setEditing(editing.fromDetail ? { kind: "view-idea", id: editing.idea.id } : null)}
+        />
+      ) : null}
+      {viewingIdea ? (
+        <IdeaDetail
+          key={viewingIdea.id}
+          idea={viewingIdea}
+          onEdit={() => setEditing({ kind: "idea", idea: viewingIdea, fromDetail: true })}
+          onDone={() => setEditing(null)}
+        />
+      ) : null}
+      {viewingLeg ? (
+        <LegDetail
+          key={viewingLeg.id}
+          leg={viewingLeg}
+          onEdit={() => setEditing({ kind: "leg", leg: viewingLeg, fromDetail: true })}
+          onDone={() => setEditing(null)}
+        />
       ) : null}
       {editing?.kind === "new-idea" ? (
         <IdeaSheet
@@ -75,7 +101,11 @@ export function DaysView({ data, serverToday }: { data: TripData; serverToday: s
         <DayPickerSheet key={editing.idea.id} idea={editing.idea} days={days} onDone={() => setEditing(null)} />
       ) : null}
       {editing?.kind === "leg" ? (
-        <LegSheet key={editing.leg.id} leg={editing.leg} onDone={() => setEditing(null)} />
+        <LegSheet
+          key={editing.leg.id}
+          leg={editing.leg}
+          onDone={() => setEditing(editing.fromDetail ? { kind: "view-leg", id: editing.leg.id } : null)}
+        />
       ) : null}
       {editing?.kind === "add" ? (
         <AddActivitySheet
@@ -140,14 +170,15 @@ function DayCard({
       {legs.length > 0 ? (
         <ul className="separated" style={{ "--inset": "64px" } as React.CSSProperties}>
           {legs.map((leg) => (
-            <li key={leg.id}>
+            <li key={leg.id} className="flex items-center pr-2">
               <button
                 type="button"
-                onClick={() => onEdit({ kind: "leg", leg })}
-                className="flex w-full items-center px-4 py-2.5 text-left active:bg-fill"
+                onClick={() => onEdit({ kind: "view-leg", id: leg.id })}
+                className="flex min-w-0 flex-1 items-center py-2.5 pl-4 pr-2 text-left active:bg-fill"
               >
                 <LegSummary leg={leg} />
               </button>
+              <EditButton label={`Edit ${leg.origin} to ${leg.destination}`} onClick={() => onEdit({ kind: "leg", leg })} />
             </li>
           ))}
         </ul>
@@ -169,7 +200,7 @@ function DayCard({
                 {handle}
                 <button
                   type="button"
-                  onClick={() => onEdit({ kind: "idea", idea })}
+                  onClick={() => onEdit({ kind: "view-idea", id: idea.id })}
                   className="flex min-w-0 flex-1 items-center py-1 text-left"
                 >
                   <IdeaSummary idea={idea} />
@@ -182,6 +213,7 @@ function DayCard({
                 >
                   <CalendarDays className="h-[18px] w-[18px]" />
                 </button>
+                <EditButton label={`Edit ${idea.name}`} onClick={() => onEdit({ kind: "idea", idea })} />
               </div>
             )}
           </SortableList>

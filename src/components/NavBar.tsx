@@ -41,19 +41,19 @@ export function NavBar({ title, eyebrow, back, large = true, trailing }: NavBarP
 
   return (
     <>
-      <header className="sticky top-0 z-30 -mx-4" style={{ paddingTop: "var(--safe-top)" }}>
+      <header className="sticky top-0 z-30 -mx-4 lg:-mx-8" style={{ paddingTop: "var(--safe-top)" }}>
         <div
           aria-hidden
-          className={`absolute inset-y-0 left-1/2 w-screen -translate-x-1/2 border-b bg-bar backdrop-blur-xl backdrop-saturate-150 transition-[opacity,border-color] duration-200 ${
+          className={`absolute inset-y-0 left-1/2 w-screen -translate-x-1/2 lg:w-[calc(100vw-var(--sidebar-w))] border-b bg-bar backdrop-blur-xl backdrop-saturate-150 transition-[opacity,border-color] duration-200 ${
             collapsed ? "border-line opacity-100" : "border-transparent opacity-0"
           }`}
         />
-        <div ref={barRef} className="relative flex h-11 items-center justify-between gap-2 px-4">
+        <div ref={barRef} className="relative flex h-11 items-center justify-between gap-2 px-4 lg:h-13 lg:px-8">
           <div className="min-w-0 flex-1">
             {back ? (
               <Link
                 href={back.href}
-                className="-ml-2 inline-flex h-11 items-center pr-2 text-[17px] text-accent active:opacity-50"
+                className="-ml-2 inline-flex h-11 items-center pr-2 text-[17px] text-accent active:opacity-50 lg:hidden"
               >
                 <ChevronLeft className="h-7 w-7" strokeWidth={2.4} />
                 <span className="-ml-0.5 truncate">{back.label}</span>
@@ -73,7 +73,7 @@ export function NavBar({ title, eyebrow, back, large = true, trailing }: NavBarP
       </header>
 
       {large ? (
-        <div className="px-1 pb-5 pt-1">
+        <div className="px-1 pb-5 pt-1 lg:pb-6 lg:pt-2">
           {eyebrow ? (
             <p className="text-[13px] font-semibold uppercase tracking-[0.02em] text-dim">{eyebrow}</p>
           ) : null}

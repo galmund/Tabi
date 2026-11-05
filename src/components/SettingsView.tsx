@@ -44,7 +44,7 @@ export function SettingsView({ data, theme }: { data: TripData; theme: ThemeChoi
     <>
       <NavBar title="Settings" back={{ href: "/", label: "Home" }} />
 
-      <div className="rise-in space-y-8">
+      <div className="rise-in space-y-8 lg:max-w-2xl">
         <form action={formAction} className="space-y-2">
           <Section label="Trip">
             <TextRow name="name" placeholder="Trip name" defaultValue={trip.name} required maxLength={60} />

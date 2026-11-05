@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { BedDouble, Plus, TrainFront } from "lucide-react";
 import { deleteStay, setStayStatus } from "@/app/actions";
 import { LegSheet, StaySheet, type StayDefaults } from "@/components/BookingSheets";
+import { EditButton, LegDetail, StayDetail } from "@/components/DetailSheets";
 import { NavBar } from "@/components/NavBar";
 import { LegSummary, Thumb } from "@/components/rows";
 import { SegmentedTrack, segmentClass } from "@/components/Segmented";
@@ -18,8 +19,10 @@ import type { LegRow, StayRow, TripData } from "@/lib/trip";
 type Tab = "stays" | "travel";
 
 type Editing =
-  | { kind: "stay"; stay?: StayRow; defaults?: StayDefaults }
-  | { kind: "leg"; leg?: LegRow }
+  | { kind: "stay"; stay?: StayRow; defaults?: StayDefaults; fromDetail?: boolean }
+  | { kind: "leg"; leg?: LegRow; fromDetail?: boolean }
+  | { kind: "view-stay"; id: string }
+  | { kind: "view-leg"; id: string }
   | null;
 
 export function BookingsView({
@@ -45,6 +48,19 @@ export function BookingsView({
     setEditing(null);
     if (initialStay) router.replace("/bookings", { scroll: false });
   };
+
+  const closeEditor = () => {
+    if (editing?.kind === "stay" && editing.fromDetail && editing.stay) {
+      setEditing({ kind: "view-stay", id: editing.stay.id });
+    } else if (editing?.kind === "leg" && editing.fromDetail && editing.leg) {
+      setEditing({ kind: "view-leg", id: editing.leg.id });
+    } else {
+      close();
+    }
+  };
+
+  const viewingStay = editing?.kind === "view-stay" ? stays.find((stay) => stay.id === editing.id) : undefined;
+  const viewingLeg = editing?.kind === "view-leg" ? legs.find((leg) => leg.id === editing.id) : undefined;
 
   const booked = stays.filter((stay) => stay.status === "BOOKED").length;
 
@@ -100,6 +116,7 @@ export function BookingsView({
                     today={today}
                     outside={isOutsideTrip(trip, stay.checkIn, stay.checkOut)}
                     supersededBy={stay.status === "OPTION" ? overlapsBooked(stay, stays) : undefined}
+                    onOpen={() => setEditing({ kind: "view-stay", id: stay.id })}
                     onEdit={() => setEditing({ kind: "stay", stay })}
                   />
                 ))}
@@ -118,11 +135,11 @@ export function BookingsView({
         ) : (
           <GroupedList inset={16 + 36 + 12}>
             {legs.map((leg) => (
-              <li key={leg.id}>
+              <li key={leg.id} className="flex items-center pr-2">
                 <button
                   type="button"
-                  onClick={() => setEditing({ kind: "leg", leg })}
-                  className="w-full px-4 py-3 text-left active:bg-fill"
+                  onClick={() => setEditing({ kind: "view-leg", id: leg.id })}
+                  className="min-w-0 flex-1 py-3 pl-4 pr-2 text-left active:bg-fill"
                 >
                   <div className="flex items-center gap-3">
                     <LegSummary leg={leg} showDate />
@@ -137,6 +154,7 @@ export function BookingsView({
                     indent
                   />
                 </button>
+                <EditButton label={`Edit ${leg.origin} to ${leg.destination}`} onClick={() => setEditing({ kind: "leg", leg })} />
               </li>
             ))}
           </GroupedList>
@@ -149,11 +167,28 @@ export function BookingsView({
           stay={editing.stay}
           defaults={editing.defaults}
           cities={cities}
-          onDone={close}
+          onDone={closeEditor}
         />
       ) : null}
       {editing?.kind === "leg" ? (
-        <LegSheet key={editing.leg?.id ?? "new"} leg={editing.leg} defaultDay={trip.startDate} onDone={close} />
+        <LegSheet key={editing.leg?.id ?? "new"} leg={editing.leg} defaultDay={trip.startDate} onDone={closeEditor} />
+      ) : null}
+      {viewingStay ? (
+        <StayDetail
+          key={viewingStay.id}
+          stay={viewingStay}
+          today={today}
+          onEdit={() => setEditing({ kind: "stay", stay: viewingStay, fromDetail: true })}
+          onDone={close}
+        />
+      ) : null}
+      {viewingLeg ? (
+        <LegDetail
+          key={viewingLeg.id}
+          leg={viewingLeg}
+          onEdit={() => setEditing({ kind: "leg", leg: viewingLeg, fromDetail: true })}
+          onDone={close}
+        />
       ) : null}
     </>
   );
@@ -193,12 +228,14 @@ function StayItem({
   today,
   outside,
   supersededBy,
+  onOpen,
   onEdit,
 }: {
   stay: StayRow;
   today: string;
   outside: boolean;
   supersededBy: StayRow | undefined;
+  onOpen: () => void;
   onEdit: () => void;
 }) {
   const [pending, startTransition] = useTransition();
@@ -211,8 +248,8 @@ function StayItem({
         <span className="my-3 ml-2 w-1 shrink-0 rounded-full" style={{ backgroundColor: stay.city.color }} />
         <button
           type="button"
-          onClick={onEdit}
-          className="flex min-w-0 flex-1 gap-3 py-3 pl-3 pr-4 text-left active:bg-fill"
+          onClick={onOpen}
+          className="flex min-w-0 flex-1 gap-3 py-3 pl-3 pr-2 text-left active:bg-fill"
         >
           <div className="min-w-0 flex-1">
             <p className="flex items-center gap-2">
@@ -240,8 +277,8 @@ function StayItem({
           </div>
           {stay.photos[0] ? <Thumb src={stay.photos[0].src} size={52} /> : null}
         </button>
-        {stay.status === "OPTION" ? (
-          <div className="flex shrink-0 items-center pr-3">
+        <div className="flex shrink-0 items-center gap-1 pr-2">
+          {stay.status === "OPTION" ? (
             <button
               type="button"
               disabled={pending}
@@ -256,8 +293,9 @@ function StayItem({
             >
               {supersededBy ? "Remove" : "Booked it"}
             </button>
-          </div>
-        ) : null}
+          ) : null}
+          <EditButton label={`Edit ${stay.name}`} onClick={onEdit} />
+        </div>
       </div>
     </li>
   );

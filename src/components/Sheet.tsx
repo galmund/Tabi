@@ -52,12 +52,12 @@ function SheetHeader({
       className="relative shrink-0 touch-none border-b border-line"
       {...dragHandlers}
       onPointerDown={(event) => {
-        if ((event.target as Element).closest("button")) return;
+        if (event.pointerType === "mouse" || (event.target as Element).closest("button")) return;
         dragHandlers.onPointerDown(event);
       }}
     >
-      <span className="absolute left-1/2 top-1.5 h-[5px] w-9 -translate-x-1/2 rounded-full bg-elev3" />
-      <div className="flex h-14 items-center justify-between gap-2 px-4 pt-1">
+      <span className="absolute left-1/2 top-1.5 h-[5px] w-9 -translate-x-1/2 rounded-full bg-elev3 lg:hidden" />
+      <div className="flex h-14 items-center justify-between gap-2 px-4 pt-1 lg:h-13 lg:pt-0">
         <div className="flex min-w-16 justify-start">{leading}</div>
         <h3 className="truncate text-[17px] font-semibold">{title}</h3>
         <div className="flex min-w-16 justify-end">{trailing}</div>
@@ -133,10 +133,12 @@ export function FormSheet({
 export function Sheet({
   title,
   onDone,
+  leading,
   children,
 }: {
   title: string;
   onDone: () => void;
+  leading?: { label: string; onClick: () => void };
   children: (close: () => void) => ReactNode;
 }) {
   const { dismiss, dragHandlers, dialogProps } = useSheetDialog(onDone);
@@ -147,7 +149,13 @@ export function Sheet({
         <SheetHeader
           dragHandlers={dragHandlers}
           title={title}
-          leading={null}
+          leading={
+            leading ? (
+              <button type="button" onClick={leading.onClick} className={`-ml-1 ${barButton}`}>
+                {leading.label}
+              </button>
+            ) : null
+          }
           trailing={
             <button type="button" onClick={dismiss} className={`-mr-1 font-semibold ${barButton}`}>
               Done
