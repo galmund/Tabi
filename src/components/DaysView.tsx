@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { BedDouble, CalendarDays, Plane, Plus, StickyNote } from "lucide-react";
-import { moveActivity, saveDayNote, scheduleIdea } from "@/app/actions";
+import { addDayCity, moveActivity, saveDayNote, scheduleIdea, setDayCity, shiftLeg } from "@/app/actions";
 import { useActivityDrag } from "@/components/ActivityDrag";
 import { LegSheet } from "@/components/BookingSheets";
 import { EditButton, IdeaDetail, LegDetail } from "@/components/DetailSheets";
@@ -13,10 +13,10 @@ import { IdeaSummary, LegSummary } from "@/components/rows";
 import { FormGroup, GroupLabel } from "@/components/form";
 import { Sheet } from "@/components/Sheet";
 import { CityDot, CityTag, Tag } from "@/components/ui";
-import { addDays, formatDay, formatRange, plural } from "@/lib/dates";
+import { addDays, daysBetween, formatDay, formatRange, plural } from "@/lib/dates";
 import { useToday } from "@/lib/device";
 import { bookedStayOn, dayOptions, overnightLegOn, type DayOption } from "@/lib/plan";
-import type { IdeaRow, LegRow, TripData } from "@/lib/trip";
+import type { CityRow, IdeaRow, LegRow, TripData } from "@/lib/trip";
 
 type Editing =
   | { kind: "idea"; idea: IdeaRow; fromDetail?: boolean }
@@ -27,15 +27,19 @@ type Editing =
   | { kind: "add"; day: DayOption }
   | { kind: "new-leg"; day: string }
   | { kind: "leg"; leg: LegRow; fromDetail?: boolean }
+  | { kind: "cities"; day: string }
   | null;
 
 export function DaysView({ data, serverToday }: { data: TripData; serverToday: string }) {
   const today = useToday(serverToday);
-  const { trip, stays, legs, notes, cities } = data;
+  const { trip, stays, notes, cities, dayCities } = data;
   const serverKey = data.ideas.map((idea) => `${idea.id}:${idea.day}:${idea.dayOrder}`).join(",");
   const [moved, setMoved] = useState<{ key: string; ideas: IdeaRow[] } | null>(null);
   const ideas = moved?.key === serverKey ? moved.ideas : data.ideas;
-  const days = dayOptions(trip, stays, ideas);
+  const legKey = data.legs.map((leg) => `${leg.id}:${leg.departDate}:${leg.arriveDate}`).join(",");
+  const [shifted, setShifted] = useState<{ key: string; legs: LegRow[] } | null>(null);
+  const legs = shifted?.key === legKey ? shifted.legs : data.legs;
+  const days = dayOptions(trip, stays, ideas, dayCities);
   const [editing, setEditing] = useState<Editing>(null);
   const [, startTransition] = useTransition();
 
@@ -57,8 +61,39 @@ export function DaysView({ data, serverToday }: { data: TripData; serverToday: s
       return idea ? <IdeaSummary idea={idea} /> : null;
     },
   });
+  const legDrag = useActivityDrag({
+    ordered: false,
+    days: days.map((option) => option.day),
+    order: () => [],
+    onDrop: (id, day, _ids, fromDay) => {
+      const shift = daysBetween(fromDay, day);
+      const next = legs
+        .map((leg) =>
+          leg.id === id
+            ? {
+                ...leg,
+                departDate: addDays(leg.departDate, shift),
+                arriveDate: leg.arriveDate ? addDays(leg.arriveDate, shift) : null,
+              }
+            : leg
+        )
+        .sort(
+          (a, b) =>
+            a.departDate.localeCompare(b.departDate) || (a.departTime ?? "~").localeCompare(b.departTime ?? "~")
+        );
+      setShifted({ key: legKey, legs: next });
+      startTransition(async () => {
+        await shiftLeg(id, fromDay, day);
+      });
+    },
+    renderGhost: (id) => {
+      const leg = legs.find((candidate) => candidate.id === id);
+      return leg ? <LegSummary leg={leg} /> : null;
+    },
+  });
   const viewingIdea = editing?.kind === "view-idea" ? ideas.find((idea) => idea.id === editing.id) : undefined;
   const viewingLeg = editing?.kind === "view-leg" ? legs.find((leg) => leg.id === editing.id) : undefined;
+  const citiesDay = editing?.kind === "cities" ? days.find((option) => option.day === editing.day) : undefined;
 
   useEffect(() => {
     if (window.location.hash) return;
@@ -85,10 +120,12 @@ export function DaysView({ data, serverToday }: { data: TripData; serverToday: s
             transit={overnightLegOn(legs, option.day)}
             onEdit={setEditing}
             drag={drag}
+            legDrag={legDrag}
           />
         ))}
       </div>
       {drag.overlay}
+      {legDrag.overlay}
 
       {editing?.kind === "idea" ? (
         <IdeaSheet
@@ -136,6 +173,9 @@ export function DaysView({ data, serverToday }: { data: TripData; serverToday: s
           onDone={() => setEditing(editing.fromDetail ? { kind: "view-leg", id: editing.leg.id } : null)}
         />
       ) : null}
+      {citiesDay ? (
+        <DayCitiesSheet key={citiesDay.day} option={citiesDay} cities={cities} onDone={() => setEditing(null)} />
+      ) : null}
       {editing?.kind === "add" ? (
         <AddActivitySheet
           key={editing.day.day}
@@ -162,6 +202,7 @@ function DayCard({
   transit,
   onEdit,
   drag,
+  legDrag,
 }: {
   option: DayOption;
   isToday: boolean;
@@ -173,12 +214,18 @@ function DayCard({
   transit: LegRow | undefined;
   onEdit: (editing: Editing) => void;
   drag: ReturnType<typeof useActivityDrag>;
+  legDrag: ReturnType<typeof useActivityDrag>;
 }) {
-  const dropping = drag.targetDay === option.day;
+  const dropping = drag.targetDay === option.day || legDrag.targetDay === option.day;
+  const activityRef = drag.dayRef(option.day);
+  const legRef = legDrag.dayRef(option.day);
   return (
     <section
       id={`day-${option.day}`}
-      ref={drag.dayRef(option.day)}
+      ref={(node) => {
+        activityRef(node);
+        legRef(node);
+      }}
       className={`scroll-mt-[calc(var(--safe-top)+56px)] overflow-hidden rounded-card bg-elev transition-shadow duration-150 ${
         dropping ? "ring-2 ring-accent/60" : isToday ? "ring-2 ring-accent" : ""
       }`}
@@ -191,23 +238,37 @@ function DayCard({
           </p>
           <h2 className="text-[20px] font-bold tracking-tight">{formatDay(option.day)}</h2>
         </div>
-        {option.cities.length > 0 ? (
-          <div className="flex flex-wrap justify-end gap-1 pt-1">
-            {option.cities.map((city) => (
-              <CityTag key={city.id} city={city} />
-            ))}
-          </div>
-        ) : null}
+        <button
+          type="button"
+          onClick={() => onEdit({ kind: "cities", day: option.day })}
+          aria-label={`Cities on ${formatDay(option.day)}`}
+          className="flex flex-wrap justify-end gap-1 rounded-full pt-1 active:opacity-60"
+        >
+          {option.cities.map((city) => (
+            <CityTag key={city.id} city={city} />
+          ))}
+          <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-fill px-2 py-0.5 text-[12px] font-semibold text-dim">
+            <Plus className="h-3 w-3" strokeWidth={2.8} />
+            {option.cities.length === 0 ? "City" : null}
+          </span>
+        </button>
       </header>
 
       {legs.length > 0 ? (
-        <ul className="separated" style={{ "--inset": "64px" } as React.CSSProperties}>
+        <ul className="separated">
           {legs.map((leg) => (
-            <li key={leg.id} className="flex items-center pr-2">
+            <li
+              key={leg.id}
+              data-drag-row
+              className={`flex items-center gap-1 py-1.5 pl-1 pr-2 transition-opacity duration-150 ${
+                legDrag.draggingId === leg.id ? "opacity-30" : ""
+              }`}
+            >
+              {legDrag.handle(leg.id, option.day, `${leg.origin} to ${leg.destination}`)}
               <button
                 type="button"
                 onClick={() => onEdit({ kind: "view-leg", id: leg.id })}
-                className="flex min-w-0 flex-1 items-center py-2.5 pl-4 pr-2 text-left active:bg-fill"
+                className="flex min-w-0 flex-1 items-center py-1 text-left"
               >
                 <LegSummary leg={leg} />
               </button>
@@ -224,6 +285,7 @@ function DayCard({
             <li
               key={idea.id}
               ref={drag.rowRef(idea.id)}
+              data-drag-row
               className={`transition-opacity duration-150 ${drag.draggingId === idea.id ? "opacity-30" : ""}`}
             >
               <div className="flex items-center gap-1 py-1.5 pl-1 pr-2">
@@ -457,6 +519,120 @@ function AddActivitySheet({
           {suggested.length === 0 && option.cities.length > 0 && ideas.length > 0 ? (
             <Tag>No ideas saved for {option.cities.map((city) => city.name).join(" or ")} yet</Tag>
           ) : null}
+        </>
+      )}
+    </Sheet>
+  );
+}
+
+function DayCitiesSheet({
+  option,
+  cities,
+  onDone,
+}: {
+  option: DayOption;
+  cities: CityRow[];
+  onDone: () => void;
+}) {
+  const [overrides, setOverrides] = useState<Record<string, boolean>>({});
+  const [name, setName] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  const fromStays = cities.filter((city) => option.stayCityIds.includes(city.id));
+  const choices = cities.filter((city) => !option.stayCityIds.includes(city.id));
+  const isOn = (id: string) => overrides[id] ?? option.cities.some((city) => city.id === id);
+
+  const toggle = (id: string) => {
+    const on = !isOn(id);
+    setOverrides((current) => ({ ...current, [id]: on }));
+    setError(null);
+    startTransition(async () => {
+      const result = await setDayCity(option.day, id, on);
+      if (!result.ok) setError(result.error);
+    });
+  };
+
+  const add = () => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    setError(null);
+    startTransition(async () => {
+      const result = await addDayCity(option.day, trimmed);
+      if (result.ok) setName("");
+      else setError(result.error);
+    });
+  };
+
+  return (
+    <Sheet title={formatDay(option.day)} onDone={onDone}>
+      {() => (
+        <>
+          {fromStays.length > 0 ? (
+            <div>
+              <GroupLabel>From your hotel</GroupLabel>
+              <div className="flex flex-wrap gap-1.5">
+                {fromStays.map((city) => (
+                  <CityTag key={city.id} city={city} />
+                ))}
+              </div>
+            </div>
+          ) : null}
+          {choices.length > 0 ? (
+            <div>
+              <GroupLabel>Cities this day</GroupLabel>
+              <div className="flex flex-wrap gap-2">
+                {choices.map((city) => {
+                  const active = isOn(city.id);
+                  return (
+                    <button
+                      key={city.id}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => toggle(city.id)}
+                      className="pressable flex h-9 items-center rounded-full px-3.5 text-[15px] font-semibold transition-colors"
+                      style={{
+                        color: active ? "#fff" : city.color,
+                        backgroundColor: active ? city.color : `${city.color}22`,
+                      }}
+                    >
+                      {city.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+          <div>
+            <GroupLabel>New city</GroupLabel>
+            <FormGroup>
+              <div className="flex h-12 items-center gap-2 pl-4 pr-2">
+                <input
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      add();
+                    }
+                  }}
+                  maxLength={60}
+                  placeholder="Nikko, Hakone…"
+                  aria-label="New city"
+                  autoComplete="off"
+                  className="input"
+                />
+                <button
+                  type="button"
+                  onClick={add}
+                  disabled={pending || !name.trim()}
+                  className="shrink-0 px-2 text-[17px] font-semibold text-accent disabled:text-faint"
+                >
+                  Add
+                </button>
+              </div>
+            </FormGroup>
+          </div>
+          {error ? <p className="rounded-[12px] bg-bad/15 px-4 py-3 text-[15px] text-bad">{error}</p> : null}
         </>
       )}
     </Sheet>

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
-import { isClock, isIsoDay } from "@/lib/dates";
+import { addDays, daysBetween, isClock, isIsoDay, normalizeClock } from "@/lib/dates";
 import {
   CITY_COLORS,
   isCurrency,
@@ -64,9 +64,11 @@ function requiredDay(form: FormData, key: string, label: string): string {
 }
 
 function clock(form: FormData, key: string, label: string): string | null {
-  const value = text(form, key, 5);
-  if (value && !isClock(value)) throw new InvalidInput(`${label} isn't a valid time.`);
-  return value;
+  const value = text(form, key, 12);
+  if (!value) return null;
+  const normalized = normalizeClock(value);
+  if (!normalized || !isClock(normalized)) throw new InvalidInput(`${label} isn't a valid time — try 11:30.`);
+  return normalized;
 }
 
 function url(form: FormData, key: string): string | null {
@@ -353,6 +355,23 @@ export async function moveActivity(id: string, dayValue: string, ids: string[]):
   });
 }
 
+export async function shiftLeg(id: string, fromDay: string, toDay: string): Promise<ActionResult> {
+  return attempt(async () => {
+    if (!isIsoDay(fromDay) || !isIsoDay(toDay)) throw new InvalidInput("That isn't a valid day.");
+    const shift = daysBetween(fromDay, toDay);
+    if (shift === 0) return;
+    const leg = await prisma.travelLeg.findUnique({ where: { id }, select: { departDate: true, arriveDate: true } });
+    if (!leg) throw new InvalidInput("That travel no longer exists.");
+    await prisma.travelLeg.update({
+      where: { id },
+      data: {
+        departDate: addDays(leg.departDate, shift),
+        arriveDate: leg.arriveDate ? addDays(leg.arriveDate, shift) : null,
+      },
+    });
+  });
+}
+
 export async function deleteIdea(id: string): Promise<ActionResult> {
   return attempt(async () => {
     await prisma.idea.delete({ where: { id } });
@@ -443,6 +462,28 @@ export async function saveDayNote(dayValue: string, note: string): Promise<Actio
         update: { text: trimmed },
         create: { day: dayValue, text: trimmed },
       });
+  });
+}
+
+export async function setDayCity(dayValue: string, id: string, on: boolean): Promise<ActionResult> {
+  return attempt(async () => {
+    if (!isIsoDay(dayValue)) throw new InvalidInput("That isn't a valid day.");
+    if (on) {
+      await prisma.dayCity.createMany({ data: [{ day: dayValue, cityId: id }], skipDuplicates: true });
+    } else {
+      await prisma.dayCity.deleteMany({ where: { day: dayValue, cityId: id } });
+    }
+  });
+}
+
+export async function addDayCity(dayValue: string, name: string): Promise<ActionResult> {
+  return attempt(async () => {
+    if (!isIsoDay(dayValue)) throw new InvalidInput("That isn't a valid day.");
+    const form = new FormData();
+    form.set("city", name);
+    const id = await cityId(form);
+    if (!id) throw new InvalidInput("Type a city name.");
+    await prisma.dayCity.createMany({ data: [{ day: dayValue, cityId: id }], skipDuplicates: true });
   });
 }
 

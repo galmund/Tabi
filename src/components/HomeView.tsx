@@ -219,8 +219,8 @@ function Countdown({
 }
 
 function TodaySection({ data, today, dayNumber }: { data: TripData; today: string; dayNumber: number }) {
-  const { trip, stays, legs, ideas, notes } = data;
-  const cities = citiesOnDay(stays, today);
+  const { trip, stays, legs, ideas, notes, dayCities } = data;
+  const cities = citiesOnDay(stays, today, dayCities);
   const todaysLegs = legs.filter((leg) => leg.departDate === today || leg.arriveDate === today);
   const activities = ideas.filter((idea) => idea.day === today);
   const note = notes.find((entry) => entry.day === today)?.text;

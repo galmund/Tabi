@@ -12,6 +12,7 @@ type StayLike = {
 };
 type LegLike = { id: string; departDate: string; arriveDate: string | null };
 type TodoLike = { id: string; done: boolean; dueDate: string | null };
+type DayCityLike = { day: string; city: CityLike };
 
 export type Phase = "before" | "during" | "after";
 
@@ -97,10 +98,18 @@ export function routeSegments<S extends StayLike, L extends LegLike>(
   return segments;
 }
 
-export function citiesOnDay<S extends StayLike>(stays: S[], day: string): CityLike[] {
+export function stayCitiesOnDay<S extends StayLike>(stays: S[], day: string): CityLike[] {
   const cities: CityLike[] = [];
   for (const stay of [bookedStayOn(stays, addDays(day, -1)), bookedStayOn(stays, day)]) {
     if (stay && !cities.some((city) => city.id === stay.city.id)) cities.push(stay.city);
+  }
+  return cities;
+}
+
+export function citiesOnDay<S extends StayLike>(stays: S[], day: string, dayCities: DayCityLike[] = []): CityLike[] {
+  const cities = stayCitiesOnDay(stays, day);
+  for (const { city } of dayCities.filter((entry) => entry.day === day)) {
+    if (!cities.some((other) => other.id === city.id)) cities.push(city);
   }
   return cities;
 }
@@ -144,17 +153,25 @@ export function comingUp<S extends StayLike, T extends TodoLike>(
   return items.sort((a, b) => a.day.localeCompare(b.day));
 }
 
-export type DayOption = { day: string; number: number; cities: CityLike[]; planned: number };
+export type DayOption = {
+  day: string;
+  number: number;
+  cities: CityLike[];
+  stayCityIds: string[];
+  planned: number;
+};
 
 export function dayOptions<S extends StayLike>(
   trip: TripLike,
   stays: S[],
-  ideas: { day: string | null }[]
+  ideas: { day: string | null }[],
+  dayCities: DayCityLike[] = []
 ): DayOption[] {
   return tripDays(trip).map((day, index) => ({
     day,
     number: index + 1,
-    cities: citiesOnDay(stays, day),
+    cities: citiesOnDay(stays, day, dayCities),
+    stayCityIds: stayCitiesOnDay(stays, day).map((city) => city.id),
     planned: ideas.filter((idea) => idea.day === day).length,
   }));
 }

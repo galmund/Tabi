@@ -14,6 +14,15 @@ export function isClock(value: string): boolean {
   return CLOCK.test(value);
 }
 
+export function normalizeClock(value: string): string | null {
+  const match = value.trim().match(/^(\d{1,2})(?:\s*[:.hH]?\s*(\d{2}))?$/);
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2] ?? 0);
+  if (hours > 23 || minutes > 59) return null;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
 export function addDays(day: string, amount: number): string {
   return toDay(new Date(toDate(day).getTime() + amount * DAY_MS));
 }

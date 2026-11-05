@@ -67,6 +67,7 @@ model City {
   stays  Stay[]
   ideas  Idea[]
   wishes WishItem[]
+  days   DayCity[]
 }
 
 model Stay {
@@ -160,6 +161,15 @@ model Todo {
 model DayNote {
   day  String @id
   text String
+}
+
+model DayCity {
+  day       String
+  cityId    String
+  city      City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([day, cityId])
 }
 
 model Photo {

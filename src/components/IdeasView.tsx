@@ -22,10 +22,10 @@ const ALL = "all";
 const NO_CITY = "none";
 
 export function IdeasView({ data }: { data: TripData }) {
-  const { trip, stays, ideas, cities } = data;
+  const { trip, stays, ideas, cities, dayCities } = data;
   const [filter, setFilter] = useState<string>(ALL);
   const [editing, setEditing] = useState<Editing>(null);
-  const days = dayOptions(trip, stays, ideas);
+  const days = dayOptions(trip, stays, ideas, dayCities);
 
   const groups: { key: string; city: CityRow | null; ideas: IdeaRow[] }[] = [
     ...cities.map((city) => ({ key: city.id, city, ideas: ideas.filter((idea) => idea.cityId === city.id) })),

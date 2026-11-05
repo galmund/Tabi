@@ -26,7 +26,7 @@ const withSources = <T extends { photos: { id: string }[] }>(row: T) => ({
 });
 
 export const getTripData = cache(async () => {
-  const [trip, cities, stays, legs, ideas, todos, notes, wishes] = await Promise.all([
+  const [trip, cities, stays, legs, ideas, todos, notes, wishes, dayCities] = await Promise.all([
     getTrip(),
     prisma.city.findMany({ orderBy: { createdAt: "asc" } }),
     prisma.stay.findMany({
@@ -54,6 +54,7 @@ export const getTripData = cache(async () => {
       include: { city: true, photos },
       orderBy: [{ bought: "asc" }, { createdAt: "asc" }],
     }),
+    prisma.dayCity.findMany({ include: { city: true }, orderBy: { createdAt: "asc" } }),
   ]);
   return {
     trip,
@@ -64,6 +65,7 @@ export const getTripData = cache(async () => {
     todos,
     notes,
     wishes: wishes.map(withSources),
+    dayCities,
   };
 });
 

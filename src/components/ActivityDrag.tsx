@@ -16,11 +16,13 @@ export function useActivityDrag({
   order,
   onDrop,
   renderGhost,
+  ordered = true,
 }: {
   days: string[];
   order: (day: string) => string[];
-  onDrop: (id: string, day: string, ids: string[]) => void;
+  onDrop: (id: string, day: string, ids: string[], fromDay: string) => void;
   renderGhost: (id: string) => ReactNode;
+  ordered?: boolean;
 }) {
   const dayNodes = useRef(new Map<string, HTMLElement>());
   const rowNodes = useRef(new Map<string, HTMLElement>());
@@ -50,8 +52,7 @@ export function useActivityDrag({
       }
     }
 
-    const rows = latest.current
-      .order(day)
+    const rows = (ordered ? latest.current.order(day) : [])
       .filter((id) => id !== active.id)
       .map((id) => rowNodes.current.get(id)?.getBoundingClientRect())
       .filter((rect): rect is DOMRect => !!rect);
@@ -68,7 +69,7 @@ export function useActivityDrag({
     const line = lineRef.current;
     if (line && card) {
       const unchanged = day === active.fromDay && index === active.fromIndex;
-      line.style.opacity = unchanged ? "0" : "1";
+      line.style.opacity = unchanged || !ordered ? "0" : "1";
       line.style.width = `${card.width - LINE_INSET * 2}px`;
       line.style.transform = `translate(${card.left + LINE_INSET}px, ${lineY - 1.5}px)`;
     }
@@ -80,7 +81,7 @@ export function useActivityDrag({
       targetRef.current = { day, index };
       setTargetDay(day);
     }
-  }, [active]);
+  }, [active, ordered]);
 
   useLayoutEffect(() => {
     measure();
@@ -95,10 +96,10 @@ export function useActivityDrag({
       setActive(null);
       setTargetDay(null);
       if (!commit || !target) return;
-      if (target.day === active.fromDay && target.index === active.fromIndex) return;
-      const ids = latest.current.order(target.day).filter((id) => id !== active.id);
-      ids.splice(target.index, 0, active.id);
-      latest.current.onDrop(active.id, target.day, ids);
+      if (target.day === active.fromDay && (!ordered || target.index === active.fromIndex)) return;
+      const ids = ordered ? latest.current.order(target.day).filter((id) => id !== active.id) : [];
+      if (ordered) ids.splice(target.index, 0, active.id);
+      latest.current.onDrop(active.id, target.day, ids, active.fromDay);
     };
 
     const onMove = (event: PointerEvent) => {
@@ -148,7 +149,7 @@ export function useActivityDrag({
       window.removeEventListener("pointercancel", onCancel);
       window.removeEventListener("keydown", onKey);
     };
-  }, [active, measure]);
+  }, [active, measure, ordered]);
 
   const register =
     (map: React.RefObject<Map<string, HTMLElement>>, key: string) => (node: HTMLElement | null) => {
@@ -158,10 +159,10 @@ export function useActivityDrag({
 
   const begin = (id: string, day: string) => (event: React.PointerEvent) => {
     if (event.pointerType === "mouse" && event.button !== 0) return;
-    const row = rowNodes.current.get(id)?.getBoundingClientRect();
+    const row = event.currentTarget.closest("[data-drag-row]")?.getBoundingClientRect();
     if (!row) return;
     event.preventDefault();
-    const fromIndex = latest.current.order(day).indexOf(id);
+    const fromIndex = ordered ? latest.current.order(day).indexOf(id) : 0;
     pointer.current = { x: event.clientX, y: event.clientY };
     targetRef.current = { day, index: fromIndex };
     setTargetDay(day);
@@ -176,28 +177,29 @@ export function useActivityDrag({
   };
 
   const step = (id: string, day: string, direction: -1 | 1) => {
-    const ids = latest.current.order(day);
-    const index = ids.indexOf(id);
-    const next = index + direction;
+    const ids = ordered ? latest.current.order(day) : [id];
+    const next = ids.indexOf(id) + direction;
+    let landed = day;
     if (next >= 0 && next < ids.length) {
       const reordered = ids.filter((other) => other !== id);
       reordered.splice(next, 0, id);
-      latest.current.onDrop(id, day, reordered);
+      latest.current.onDrop(id, day, reordered, day);
     } else {
       const otherDay = days[days.indexOf(day) + direction];
       if (!otherDay) return;
-      const others = latest.current.order(otherDay).filter((other) => other !== id);
-      latest.current.onDrop(id, otherDay, direction < 0 ? [...others, id] : [id, ...others]);
+      const others = ordered ? latest.current.order(otherDay).filter((other) => other !== id) : [];
+      latest.current.onDrop(id, otherDay, direction < 0 ? [...others, id] : [id, ...others], day);
+      landed = otherDay;
     }
     requestAnimationFrame(() =>
-      document.querySelector<HTMLElement>(`[data-drag-handle="${CSS.escape(id)}"]`)?.focus()
+      document.querySelector<HTMLElement>(`[data-drag-handle="${CSS.escape(`${id}@${landed}`)}"]`)?.focus()
     );
   };
 
   const handle = (id: string, day: string, label: string) => (
     <button
       type="button"
-      data-drag-handle={id}
+      data-drag-handle={`${id}@${day}`}
       aria-label={`Move ${label}. Drag to another day, or use the arrow keys.`}
       onPointerDown={begin(id, day)}
       onKeyDown={(event) => {

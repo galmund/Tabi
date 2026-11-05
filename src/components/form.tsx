@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { ChevronsUpDown } from "lucide-react";
+import { normalizeClock } from "@/lib/dates";
 
 export function FormGroup({ children }: { children: ReactNode }) {
   return <div className="separated overflow-hidden rounded-[12px] bg-group">{children}</div>;
@@ -80,6 +81,27 @@ export function InputRow({
   required?: boolean;
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
 }) {
+  if (type === "time") {
+    return (
+      <FieldRow label={label}>
+        <input
+          name={name}
+          defaultValue={defaultValue ?? ""}
+          placeholder={placeholder ?? "HH:MM"}
+          required={required}
+          inputMode="numeric"
+          autoComplete="off"
+          maxLength={12}
+          onBlur={(event) => {
+            const normalized = normalizeClock(event.currentTarget.value);
+            if (normalized) event.currentTarget.value = normalized;
+          }}
+          className="input tnum text-right text-accent"
+        />
+      </FieldRow>
+    );
+  }
+
   return (
     <FieldRow label={label}>
       <input
@@ -91,7 +113,7 @@ export function InputRow({
         inputMode={type === "url" ? "url" : inputMode}
         autoCapitalize={type === "url" ? "off" : undefined}
         autoCorrect={type === "url" ? "off" : undefined}
-        className={`input text-right ${type === "date" || type === "time" ? "text-accent" : ""}`}
+        className={`input text-right ${type === "date" ? "text-accent" : ""}`}
       />
     </FieldRow>
   );
