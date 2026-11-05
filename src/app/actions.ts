@@ -340,13 +340,16 @@ export async function scheduleIdea(id: string, dayValue: string | null): Promise
   });
 }
 
-export async function reorderDay(dayValue: string, ids: string[]): Promise<ActionResult> {
+export async function moveActivity(id: string, dayValue: string, ids: string[]): Promise<ActionResult> {
   return attempt(async () => {
-    await prisma.$transaction(
-      ids.map((id, index) =>
-        prisma.idea.updateMany({ where: { id, day: dayValue }, data: { dayOrder: index } })
-      )
-    );
+    if (!isIsoDay(dayValue)) throw new InvalidInput("That isn't a valid day.");
+    if (!ids.includes(id)) throw new InvalidInput("That activity isn't in the new order.");
+    await prisma.$transaction([
+      prisma.idea.update({ where: { id }, data: { day: dayValue } }),
+      ...ids.map((ideaId, index) =>
+        prisma.idea.updateMany({ where: { id: ideaId, day: dayValue }, data: { dayOrder: index } })
+      ),
+    ]);
   });
 }
 

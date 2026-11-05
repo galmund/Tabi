@@ -3,7 +3,8 @@
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { BedDouble, CalendarDays, Plane, Plus, StickyNote } from "lucide-react";
-import { reorderDay, saveDayNote, scheduleIdea } from "@/app/actions";
+import { moveActivity, saveDayNote, scheduleIdea } from "@/app/actions";
+import { useActivityDrag } from "@/components/ActivityDrag";
 import { LegSheet } from "@/components/BookingSheets";
 import { EditButton, IdeaDetail, LegDetail } from "@/components/DetailSheets";
 import { DayPickerSheet, IdeaSheet } from "@/components/IdeaSheets";
@@ -11,7 +12,6 @@ import { NavBar } from "@/components/NavBar";
 import { IdeaSummary, LegSummary } from "@/components/rows";
 import { FormGroup, GroupLabel } from "@/components/form";
 import { Sheet } from "@/components/Sheet";
-import { SortableList } from "@/components/SortableList";
 import { CityDot, CityTag, Tag } from "@/components/ui";
 import { addDays, formatDay, formatRange, plural } from "@/lib/dates";
 import { useToday } from "@/lib/device";
@@ -25,14 +25,38 @@ type Editing =
   | { kind: "move"; idea: IdeaRow }
   | { kind: "new-idea"; day: string; city?: string }
   | { kind: "add"; day: DayOption }
+  | { kind: "new-leg"; day: string }
   | { kind: "leg"; leg: LegRow; fromDetail?: boolean }
   | null;
 
 export function DaysView({ data, serverToday }: { data: TripData; serverToday: string }) {
   const today = useToday(serverToday);
-  const { trip, stays, legs, ideas, notes, cities } = data;
+  const { trip, stays, legs, notes, cities } = data;
+  const serverKey = data.ideas.map((idea) => `${idea.id}:${idea.day}:${idea.dayOrder}`).join(",");
+  const [moved, setMoved] = useState<{ key: string; ideas: IdeaRow[] } | null>(null);
+  const ideas = moved?.key === serverKey ? moved.ideas : data.ideas;
   const days = dayOptions(trip, stays, ideas);
   const [editing, setEditing] = useState<Editing>(null);
+  const [, startTransition] = useTransition();
+
+  const drag = useActivityDrag({
+    days: days.map((option) => option.day),
+    order: (day) => ideas.filter((idea) => idea.day === day).map((idea) => idea.id),
+    onDrop: (id, day, ids) => {
+      const next = ideas
+        .map((idea) => (idea.id === id ? { ...idea, day } : idea))
+        .map((idea) => (idea.day === day ? { ...idea, dayOrder: ids.indexOf(idea.id) } : idea))
+        .sort((a, b) => a.dayOrder - b.dayOrder);
+      setMoved({ key: serverKey, ideas: next });
+      startTransition(async () => {
+        await moveActivity(id, day, ids);
+      });
+    },
+    renderGhost: (id) => {
+      const idea = ideas.find((candidate) => candidate.id === id);
+      return idea ? <IdeaSummary idea={idea} /> : null;
+    },
+  });
   const viewingIdea = editing?.kind === "view-idea" ? ideas.find((idea) => idea.id === editing.id) : undefined;
   const viewingLeg = editing?.kind === "view-leg" ? legs.find((leg) => leg.id === editing.id) : undefined;
 
@@ -60,9 +84,11 @@ export function DaysView({ data, serverToday }: { data: TripData; serverToday: s
             stay={bookedStayOn(stays, option.day)}
             transit={overnightLegOn(legs, option.day)}
             onEdit={setEditing}
+            drag={drag}
           />
         ))}
       </div>
+      {drag.overlay}
 
       {editing?.kind === "idea" ? (
         <IdeaSheet
@@ -100,6 +126,9 @@ export function DaysView({ data, serverToday }: { data: TripData; serverToday: s
       {editing?.kind === "move" ? (
         <DayPickerSheet key={editing.idea.id} idea={editing.idea} days={days} onDone={() => setEditing(null)} />
       ) : null}
+      {editing?.kind === "new-leg" ? (
+        <LegSheet key={`new-${editing.day}`} defaultDay={editing.day} onDone={() => setEditing(null)} />
+      ) : null}
       {editing?.kind === "leg" ? (
         <LegSheet
           key={editing.leg.id}
@@ -132,6 +161,7 @@ function DayCard({
   stay,
   transit,
   onEdit,
+  drag,
 }: {
   option: DayOption;
   isToday: boolean;
@@ -142,12 +172,15 @@ function DayCard({
   stay: TripData["stays"][number] | undefined;
   transit: LegRow | undefined;
   onEdit: (editing: Editing) => void;
+  drag: ReturnType<typeof useActivityDrag>;
 }) {
+  const dropping = drag.targetDay === option.day;
   return (
     <section
       id={`day-${option.day}`}
-      className={`scroll-mt-[calc(var(--safe-top)+56px)] overflow-hidden rounded-card bg-elev ${
-        isToday ? "ring-2 ring-accent" : ""
+      ref={drag.dayRef(option.day)}
+      className={`scroll-mt-[calc(var(--safe-top)+56px)] overflow-hidden rounded-card bg-elev transition-shadow duration-150 ${
+        dropping ? "ring-2 ring-accent/60" : isToday ? "ring-2 ring-accent" : ""
       }`}
     >
       <header className="flex items-start justify-between gap-3 px-4 pb-2 pt-3.5">
@@ -184,20 +217,17 @@ function DayCard({
         </ul>
       ) : null}
 
+      <div ref={drag.anchorRef(option.day)} />
       {activities.length > 0 ? (
-        <div className={legs.length > 0 ? "border-t border-line" : ""}>
-          <SortableList
-            items={activities}
-            labelOf={(idea) => idea.name}
-            onReorder={(ids) => reorderDay(option.day, ids)}
-          >
-            {(idea, handle, dragging) => (
-              <div
-                className={`flex items-center gap-1 py-1.5 pr-2 ${handle ? "pl-1" : "pl-4"} ${
-                  dragging ? "rounded-[14px] bg-elev2 shadow-[var(--shadow-lift)]" : ""
-                }`}
-              >
-                {handle}
+        <ul className={`separated ${legs.length > 0 ? "border-t border-line" : ""}`}>
+          {activities.map((idea) => (
+            <li
+              key={idea.id}
+              ref={drag.rowRef(idea.id)}
+              className={`transition-opacity duration-150 ${drag.draggingId === idea.id ? "opacity-30" : ""}`}
+            >
+              <div className="flex items-center gap-1 py-1.5 pl-1 pr-2">
+                {drag.handle(idea.id, option.day, idea.name)}
                 <button
                   type="button"
                   onClick={() => onEdit({ kind: "view-idea", id: idea.id })}
@@ -215,9 +245,9 @@ function DayCard({
                 </button>
                 <EditButton label={`Edit ${idea.name}`} onClick={() => onEdit({ kind: "idea", idea })} />
               </div>
-            )}
-          </SortableList>
-        </div>
+            </li>
+          ))}
+        </ul>
       ) : null}
 
       <DayNote day={option.day} initial={note} />
@@ -230,6 +260,14 @@ function DayCard({
         >
           <Plus className="h-4 w-4" strokeWidth={2.6} />
           Activity
+        </button>
+        <button
+          type="button"
+          onClick={() => onEdit({ kind: "new-leg", day: option.day })}
+          className="pressable flex h-8 items-center gap-1 rounded-full bg-fill px-3 text-[14px] font-semibold text-accent"
+        >
+          <Plus className="h-4 w-4" strokeWidth={2.6} />
+          Travel
         </button>
         <div className="min-w-0 flex-1 text-right text-[14px]">
           <SleepLine day={option.day} isLast={isLast} stay={stay} transit={transit} />
@@ -278,10 +316,10 @@ function SleepLine({
   return (
     <Link
       href={`/bookings?add=stay&from=${day}&to=${addDays(day, 1)}`}
-      className="inline-flex items-center gap-1.5 font-semibold text-bad"
+      className="inline-flex items-center gap-1.5 whitespace-nowrap font-semibold text-bad"
     >
-      <BedDouble className="h-4 w-4" />
-      No hotel booked
+      <BedDouble className="h-4 w-4 shrink-0" />
+      No hotel<span className="hidden sm:inline lg:hidden xl:inline"> booked</span>
     </Link>
   );
 }
