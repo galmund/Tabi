@@ -1,11 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import { ChevronsUpDown } from "lucide-react";
 import { deleteTodo, saveTodo } from "@/app/actions";
 import { ConfirmDelete } from "@/components/ConfirmDelete";
-import { FieldRow, InputRow, Section, SectionNote, TextRow } from "@/components/form";
+import { FieldRow, GroupLabel, InputRow, Section, SectionNote, TextRow } from "@/components/form";
+import { SegmentedTrack, segmentClass } from "@/components/Segmented";
 import { FormSheet } from "@/components/Sheet";
 import { formatShortDay } from "@/lib/dates";
+import { TODO_PHASES, TODO_PHASE_LABEL } from "@/lib/labels";
 import type { IdeaRow, LegRow, StayRow, TodoRow } from "@/lib/trip";
 
 export function TodoSheet({
@@ -45,6 +48,8 @@ export function TodoSheet({
         <TextRow name="title" placeholder="Get a Suica card" defaultValue={todo?.title} required maxLength={200} autoFocus={!todo} />
         <InputRow label="Due" name="dueDate" type="date" defaultValue={todo?.dueDate} />
       </Section>
+
+      <PhasePicker defaultValue={todo?.phase ?? "PLANNING"} />
 
       {todo?.fromIdea ? (
         <SectionNote>Added because “{todo.idea?.name}” needs booking in advance. Untick that on the idea to remove it.</SectionNote>
@@ -93,5 +98,28 @@ export function TodoSheet({
         </Section>
       )}
     </FormSheet>
+  );
+}
+
+function PhasePicker({ defaultValue }: { defaultValue: TodoRow["phase"] }) {
+  const [phase, setPhase] = useState(defaultValue);
+  return (
+    <div>
+      <GroupLabel>When</GroupLabel>
+      <input type="hidden" name="phase" value={phase} />
+      <SegmentedTrack label="When" className="lg:max-w-none">
+        {TODO_PHASES.map((value) => (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={phase === value}
+            onClick={() => setPhase(value)}
+            className={segmentClass(phase === value)}
+          >
+            {TODO_PHASE_LABEL[value]}
+          </button>
+        ))}
+      </SegmentedTrack>
+    </div>
   );
 }

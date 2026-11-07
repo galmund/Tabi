@@ -10,6 +10,7 @@ import {
   isIdeaKind,
   isPayment,
   isPriority,
+  isTodoPhase,
   isTravelMode,
 } from "@/lib/labels";
 import { THEME_COOKIE, TIME_ZONE_COOKIE, type ThemeChoice } from "@/lib/cookies";
@@ -382,9 +383,11 @@ export async function saveTodo(_: ActionResult | null, form: FormData): Promise<
   return attempt(async () => {
     const id = text(form, "id", 40);
     const [kind, linkId] = (text(form, "link", 60) ?? "").split(":");
+    const phase = form.get("phase");
     const fields = {
       title: required(form, "title", "To-do", 200),
       dueDate: day(form, "dueDate", "Due date"),
+      phase: isTodoPhase(phase) ? phase : "PLANNING",
     };
     const link = {
       stayId: kind === "stay" ? linkId : null,

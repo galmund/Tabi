@@ -2,15 +2,16 @@
 
 import { useOptimistic, useState, useTransition } from "react";
 import { BedDouble, Check, Lightbulb, ListChecks, Plus } from "lucide-react";
+import type { ReactNode } from "react";
 import { setTodoDone } from "@/app/actions";
 import { CheckButton } from "@/components/CheckButton";
 import { TRAVEL_ICON } from "@/components/icons";
 import { NavBar } from "@/components/NavBar";
 import { SegmentedTrack, segmentClass } from "@/components/Segmented";
 import { TodoSheet } from "@/components/TodoSheet";
-import { EmptyState, GroupedList, SectionHeader } from "@/components/ui";
+import { EmptyState, GroupedList, SectionFooter, SectionHeader } from "@/components/ui";
 import { WishList, WishSheet } from "@/components/WishList";
-import { daysBetween, formatDay, plural } from "@/lib/dates";
+import { addDays, daysBetween, formatDay, formatShortDay, plural } from "@/lib/dates";
 import { useToday } from "@/lib/device";
 import type { TodoRow, TripData, WishRow } from "@/lib/trip";
 
@@ -28,12 +29,15 @@ export function TodosView({
   initialList: ListTab;
 }) {
   const today = useToday(serverToday);
-  const { todos, stays, legs, ideas, wishes, cities } = data;
+  const { trip, todos, stays, legs, ideas, wishes, cities } = data;
   const [list, setList] = useState<ListTab>(initialList);
   const [editing, setEditing] = useState<Editing>(null);
   const [showDone, setShowDone] = useState(false);
 
   const open = todos.filter((todo) => !todo.done);
+  const planning = open.filter((todo) => todo.phase === "PLANNING");
+  const beforeTrip = open.filter((todo) => todo.phase === "BEFORE_TRIP");
+  const weekBefore = addDays(trip.startDate, -7);
   const done = todos.filter((todo) => todo.done);
   const toBuy = wishes.filter((wish) => !wish.bought).length;
 
@@ -89,18 +93,27 @@ export function TodosView({
               title="Nothing to do yet"
               hint="Book teamLab, order a Suica, decide on the JR Pass… Ideas marked “needs booking” land here too."
             />
+          ) : open.length === 0 ? (
+            <EmptyState icon={<Check className="h-6 w-6" />} title="All done" hint="Nothing left on the list." />
           ) : (
-            <section>
-              {open.length > 0 ? (
-                <GroupedList inset={16 + 26 + 12}>
-                  {open.map((todo) => (
-                    <TodoItem key={todo.id} todo={todo} today={today} onEdit={() => setEditing({ kind: "todo", todo })} />
-                  ))}
-                </GroupedList>
-              ) : (
-                <EmptyState icon={<Check className="h-6 w-6" />} title="All done" hint="Nothing left on the list." />
-              )}
-            </section>
+            <>
+              <TodoSection
+                title="Planning"
+                trailing="Now"
+                todos={planning}
+                today={today}
+                empty="Nothing left to book or decide."
+                onEdit={(todo) => setEditing({ kind: "todo", todo })}
+              />
+              <TodoSection
+                title="Before We Fly"
+                trailing={today >= weekBefore ? "Now" : `From ${formatShortDay(weekBefore)}`}
+                todos={beforeTrip}
+                today={today}
+                empty="Insurance, cash, eSIM… things for the last week before the trip."
+                onEdit={(todo) => setEditing({ kind: "todo", todo })}
+              />
+            </>
           )}
 
           {done.length > 0 ? (
@@ -139,6 +152,37 @@ export function TodosView({
         <WishSheet key={editing.wish?.id ?? "new"} wish={editing.wish} cities={cities} onDone={() => setEditing(null)} />
       ) : null}
     </>
+  );
+}
+
+function TodoSection({
+  title,
+  trailing,
+  todos,
+  today,
+  empty,
+  onEdit,
+}: {
+  title: string;
+  trailing: ReactNode;
+  todos: TodoRow[];
+  today: string;
+  empty: string;
+  onEdit: (todo: TodoRow) => void;
+}) {
+  return (
+    <section>
+      <SectionHeader title={title} trailing={trailing} />
+      {todos.length > 0 ? (
+        <GroupedList inset={16 + 26 + 12}>
+          {todos.map((todo) => (
+            <TodoItem key={todo.id} todo={todo} today={today} onEdit={() => onEdit(todo)} />
+          ))}
+        </GroupedList>
+      ) : (
+        <SectionFooter>{empty}</SectionFooter>
+      )}
+    </section>
   );
 }
 

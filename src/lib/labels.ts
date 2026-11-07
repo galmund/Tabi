@@ -1,10 +1,16 @@
-import type { Currency, IdeaKind, Payment, Priority, TravelMode } from "@/generated/prisma/enums";
+import type { Currency, IdeaKind, Payment, Priority, TodoPhase, TravelMode } from "@/generated/prisma/enums";
 
 export const TRAVEL_MODES = ["FLIGHT", "SHINKANSEN", "TRAIN", "BUS", "FERRY", "CAR", "OTHER"] as const;
 export const IDEA_KINDS = ["SIGHT", "FOOD", "SHOPPING", "ONSEN", "EXPERIENCE", "NIGHTLIFE"] as const;
 export const CURRENCIES = ["JPY", "ILS", "USD"] as const;
 export const PAYMENTS = ["PAID", "DEPOSIT", "PAY_LATER"] as const;
 export const PRIORITIES = ["MUST", "NICE"] as const;
+export const TODO_PHASES = ["PLANNING", "BEFORE_TRIP"] as const;
+
+export const TODO_PHASE_LABEL: Record<TodoPhase, string> = {
+  PLANNING: "While planning",
+  BEFORE_TRIP: "Week before trip",
+};
 
 export const TRAVEL_MODE_LABEL: Record<TravelMode, string> = {
   FLIGHT: "Flight",
@@ -74,6 +80,7 @@ export const isIdeaKind = isOneOf<IdeaKind>(IDEA_KINDS);
 export const isCurrency = isOneOf<Currency>(CURRENCIES);
 export const isPayment = isOneOf<Payment>(PAYMENTS);
 export const isPriority = isOneOf<Priority>(PRIORITIES);
+export const isTodoPhase = isOneOf<TodoPhase>(TODO_PHASES);
 
 export function formatMoney(amount: number, currency: Currency): string {
   return new Intl.NumberFormat("en-US", {

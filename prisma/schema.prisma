@@ -42,6 +42,11 @@ enum Currency {
   USD
 }
 
+enum TodoPhase {
+  PLANNING
+  BEFORE_TRIP
+}
+
 enum Payment {
   PAID
   DEPOSIT
@@ -146,6 +151,7 @@ model Todo {
   id        String     @id @default(cuid())
   title     String
   dueDate   String?
+  phase     TodoPhase  @default(PLANNING)
   done      Boolean    @default(false)
   doneAt    DateTime?
   fromIdea  Boolean    @default(false)

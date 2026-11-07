@@ -19,7 +19,7 @@ It answers three questions, fast, from a phone:
 | **Bookings** | **Stays** (hotels and ryokans: Booked or Option, check-in/out, booking number, link, address, price + currency + payment status, free-cancellation date) and **Travel** (flights, shinkansen, trains, buses, ferries, with times exactly as printed on the ticket). |
 | **Ideas**    | Places, food and things to do, grouped by city. Each has a type, must-do or nice-to-have, a maps link, notes, and a "needs booking in advance" switch that puts a to-do on the list. **Add to day** suggests the days we're in that idea's city first. |
 | **Photos**   | Every stay, journey, idea and wish can hold photos — the room, the entrance, a menu, a ticket's QR code — from the library or the camera. They show as thumbnails in the lists, on Home for tonight's hotel and today's journeys, and open full-screen (swipe down to close, arrows to step through, Delete to remove). |
-| **To-dos**   | Two lists, switched at the top. **To-dos**: a checklist with optional due dates, each optionally linked to a stay, a journey or an idea. **Wish List**: things to buy — who it's for, which city, a rough price, a shop link, notes and photos — ticked off when bought, with a running "still to buy" total per currency. |
+| **To-dos**   | Two lists, switched at the top. **To-dos**: a checklist in two sections — **Planning** (book and decide now) and **Before We Fly** (the last week: insurance, cash, eSIM…) — with optional due dates, each optionally linked to a stay, a journey or an idea. **Wish List**: things to buy — who it's for, which city, a rough price, a shop link, notes and photos — ticked off when bought, with a running "still to buy" total per currency. |
 | **Settings** | (gear on Home) Trip name and dates, Appearance (Automatic / Light / Dark), and the cities with their colours and Japanese names. |
 
 The rules behind it:
@@ -155,7 +155,7 @@ City        name, nameJa, colour
                   day + time + dayOrder when it's on a day
 TravelLeg   mode, origin → destination, depart/arrive date + time, carrier,
             bookingRef, seat, url, price, currency, payment, notes
-Todo        title, dueDate, done — optionally linked to a Stay, TravelLeg or Idea
+Todo        title, dueDate, PLANNING | BEFORE_TRIP, done — optionally linked to a Stay, TravelLeg or Idea
 DayNote     day → text
 WishItem    name, forWhom, city, price + currency, url, notes, bought
 Photo       JPEG bytes — belongs to a Stay, TravelLeg, Idea or WishItem
