@@ -271,6 +271,15 @@ async function nextDayOrder(dayValue: string): Promise<number> {
   return (last?.dayOrder ?? -1) + 1;
 }
 
+async function firstCityOrder(cityValue: string | null): Promise<number> {
+  const first = await prisma.idea.findFirst({
+    where: { cityId: cityValue },
+    orderBy: { cityOrder: "asc" },
+    select: { cityOrder: true },
+  });
+  return first ? first.cityOrder - 1 : 0;
+}
+
 async function syncBookingTodo(ideaId: string, name: string, needsBooking: boolean) {
   const existing = await prisma.todo.findFirst({ where: { ideaId, fromIdea: true } });
   if (needsBooking && !existing) {
@@ -304,14 +313,16 @@ export async function saveIdea(_: ActionResult | null, form: FormData): Promise<
 
     let ideaId = id;
     if (id) {
-      const before = await prisma.idea.findUnique({ where: { id }, select: { day: true } });
+      const before = await prisma.idea.findUnique({ where: { id }, select: { day: true, cityId: true } });
       const dayChanged = (before?.day ?? null) !== scheduledDay;
+      const cityChanged = (before?.cityId ?? null) !== data.cityId;
       await prisma.idea.update({
         where: { id },
         data: {
           ...data,
           day: scheduledDay,
           ...(dayChanged ? { dayOrder: scheduledDay ? await nextDayOrder(scheduledDay) : 0 } : {}),
+          ...(cityChanged ? { cityOrder: await firstCityOrder(data.cityId) } : {}),
         },
       });
     } else {
@@ -321,6 +332,7 @@ export async function saveIdea(_: ActionResult | null, form: FormData): Promise<
           ...(await newPhotos(form)),
           day: scheduledDay,
           dayOrder: scheduledDay ? await nextDayOrder(scheduledDay) : 0,
+          cityOrder: await firstCityOrder(data.cityId),
         },
         select: { id: true },
       });
@@ -351,6 +363,21 @@ export async function moveActivity(id: string, dayValue: string, ids: string[]):
       prisma.idea.update({ where: { id }, data: { day: dayValue } }),
       ...ids.map((ideaId, index) =>
         prisma.idea.updateMany({ where: { id: ideaId, day: dayValue }, data: { dayOrder: index } })
+      ),
+    ]);
+  });
+}
+
+export async function moveIdea(id: string, cityValue: string | null, ids: string[]): Promise<ActionResult> {
+  return attempt(async () => {
+    if (!ids.includes(id)) throw new InvalidInput("That idea isn't in the new order.");
+    if (cityValue && !(await prisma.city.findUnique({ where: { id: cityValue }, select: { id: true } }))) {
+      throw new InvalidInput("That city no longer exists.");
+    }
+    await prisma.$transaction([
+      prisma.idea.update({ where: { id }, data: { cityId: cityValue } }),
+      ...ids.map((ideaId, index) =>
+        prisma.idea.updateMany({ where: { id: ideaId, cityId: cityValue }, data: { cityOrder: index } })
       ),
     ]);
   });

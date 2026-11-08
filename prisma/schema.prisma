@@ -139,6 +139,7 @@ model Idea {
   day          String?
   time         String?
   dayOrder     Int      @default(0)
+  cityOrder    Int      @default(0)
   createdAt    DateTime @default(now())
 
   todos  Todo[]

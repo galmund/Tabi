@@ -7,6 +7,8 @@ import { GripVertical } from "lucide-react";
 const EDGE = 90;
 const MAX_SPEED = 18;
 const LINE_INSET = 12;
+const GRID_GAP = 12;
+const GHOST = "flex scale-[1.03] items-center rounded-[14px] bg-elev2 py-2.5 pl-4 pr-3 shadow-[var(--shadow-lift)]";
 
 type Active = { id: string; fromDay: string; fromIndex: number; offsetX: number; offsetY: number; width: number };
 type Target = { day: string; index: number };
@@ -17,12 +19,18 @@ export function useActivityDrag({
   onDrop,
   renderGhost,
   ordered = true,
+  grid = false,
+  unit = "day",
+  ghostClassName = GHOST,
 }: {
   days: string[];
   order: (day: string) => string[];
   onDrop: (id: string, day: string, ids: string[], fromDay: string) => void;
   renderGhost: (id: string) => ReactNode;
   ordered?: boolean;
+  grid?: boolean;
+  unit?: string;
+  ghostClassName?: string;
 }) {
   const dayNodes = useRef(new Map<string, HTMLElement>());
   const rowNodes = useRef(new Map<string, HTMLElement>());
@@ -56,22 +64,32 @@ export function useActivityDrag({
       .filter((id) => id !== active.id)
       .map((id) => rowNodes.current.get(id)?.getBoundingClientRect())
       .filter((rect): rect is DOMRect => !!rect);
-    const index = rows.filter((rect) => rect.top + rect.height / 2 < y).length;
+    const index = grid
+      ? rows.filter((rect) => rect.bottom < y || (y >= rect.top && rect.left + rect.width / 2 < x)).length
+      : rows.filter((rect) => rect.top + rect.height / 2 < y).length;
 
     const card = dayNodes.current.get(day)?.getBoundingClientRect();
-    const lineY =
-      rows.length === 0
-        ? (anchorNodes.current.get(day)?.getBoundingClientRect().top ?? card?.top ?? 0)
-        : index < rows.length
-          ? rows[index].top
-          : rows[rows.length - 1].bottom;
-
     const line = lineRef.current;
     if (line && card) {
       const unchanged = day === active.fromDay && index === active.fromIndex;
       line.style.opacity = unchanged || !ordered ? "0" : "1";
-      line.style.width = `${card.width - LINE_INSET * 2}px`;
-      line.style.transform = `translate(${card.left + LINE_INSET}px, ${lineY - 1.5}px)`;
+      if (grid) {
+        const rect = rows[Math.min(index, rows.length - 1)];
+        const lineX = !rect ? card.left : index < rows.length ? rect.left - GRID_GAP / 2 : rect.right + GRID_GAP / 2;
+        line.style.width = "3px";
+        line.style.height = `${rect?.height ?? 0}px`;
+        line.style.transform = `translate(${lineX - 1.5}px, ${rect?.top ?? card.top}px)`;
+      } else {
+        const lineY =
+          rows.length === 0
+            ? (anchorNodes.current.get(day)?.getBoundingClientRect().top ?? card.top)
+            : index < rows.length
+              ? rows[index].top
+              : rows[rows.length - 1].bottom;
+        line.style.width = `${card.width - LINE_INSET * 2}px`;
+        line.style.height = "3px";
+        line.style.transform = `translate(${card.left + LINE_INSET}px, ${lineY - 1.5}px)`;
+      }
     }
     if (ghostRef.current) {
       ghostRef.current.style.transform = `translate(${x - active.offsetX}px, ${y - active.offsetY}px)`;
@@ -81,7 +99,7 @@ export function useActivityDrag({
       targetRef.current = { day, index };
       setTargetDay(day);
     }
-  }, [active, ordered]);
+  }, [active, ordered, grid]);
 
   useLayoutEffect(() => {
     measure();
@@ -196,19 +214,24 @@ export function useActivityDrag({
     );
   };
 
-  const handle = (id: string, day: string, label: string) => (
+  const keys: Record<string, -1 | 1> = grid
+    ? { ArrowUp: -1, ArrowLeft: -1, ArrowDown: 1, ArrowRight: 1 }
+    : { ArrowUp: -1, ArrowDown: 1 };
+
+  const handle = (id: string, day: string, label: string, className = "h-11 w-7 rounded-md") => (
     <button
       type="button"
       data-drag-handle={`${id}@${day}`}
-      aria-label={`Move ${label}. Drag to another day, or use the arrow keys.`}
+      aria-label={`Move ${label}. Drag to another ${unit}, or use the arrow keys.`}
       onPointerDown={begin(id, day)}
       onKeyDown={(event) => {
-        if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+        const direction = keys[event.key];
+        if (direction) {
           event.preventDefault();
-          step(id, day, event.key === "ArrowUp" ? -1 : 1);
+          step(id, day, direction);
         }
       }}
-      className={`flex h-11 w-7 shrink-0 items-center justify-center rounded-md ${
+      className={`flex shrink-0 items-center justify-center ${className} ${
         active?.id === id ? "text-accent" : "text-faint active:text-dim"
       }`}
       style={{ touchAction: "none", cursor: active ? "grabbing" : "grab" }}
@@ -224,7 +247,7 @@ export function useActivityDrag({
             <div
               ref={lineRef}
               aria-hidden
-              className="pointer-events-none fixed left-0 top-0 z-[60] h-[3px] rounded-full bg-accent opacity-0 shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-accent)_25%,transparent)]"
+              className="pointer-events-none fixed left-0 top-0 z-[60] rounded-full bg-accent opacity-0 shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-accent)_25%,transparent)]"
             />
             <div
               ref={ghostRef}
@@ -232,9 +255,7 @@ export function useActivityDrag({
               className="pointer-events-none fixed left-0 top-0 z-[61]"
               style={{ width: active.width }}
             >
-              <div className="flex scale-[1.03] items-center rounded-[14px] bg-elev2 py-2.5 pl-4 pr-3 shadow-[var(--shadow-lift)]">
-                {renderGhost(active.id)}
-              </div>
+              <div className={ghostClassName}>{renderGhost(active.id)}</div>
             </div>
           </>,
           document.body
