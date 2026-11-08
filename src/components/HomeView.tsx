@@ -9,13 +9,17 @@ import {
   Clock,
   Lightbulb,
   ListChecks,
+  LogOut,
   Moon,
   Settings,
   StickyNote,
+  TrainFront,
 } from "lucide-react";
 import { NavBar } from "@/components/NavBar";
 import { PhotoStrip } from "@/components/PhotoViewer";
+import { CopyChip, ideaMapsHref, legTransitHref, PinLink } from "@/components/quick";
 import { RouteBar } from "@/components/RouteBar";
+import { Suggestions } from "@/components/Suggestions";
 import { IdeaSummary, LegSummary } from "@/components/rows";
 import { Card, CityTag, GroupedList, MapButtons, SectionHeader, Tag } from "@/components/ui";
 import {
@@ -27,18 +31,22 @@ import {
   formatWeekday,
   plural,
 } from "@/lib/dates";
-import { useToday } from "@/lib/device";
+import { useNow, useToday } from "@/lib/device";
 import {
   bookedStayOn,
   citiesOnDay,
   comingUp,
+  minutesUntil,
   missingRanges,
+  nextUp,
+  type NextItem,
   nightStates,
   overnightLegOn,
   routeSegments,
   tripPhase,
+  unplannedIn,
 } from "@/lib/plan";
-import type { TripData } from "@/lib/trip";
+import type { IdeaRow, LegRow, TripData } from "@/lib/trip";
 
 const SOON_DAYS = 14;
 
@@ -220,6 +228,8 @@ function Countdown({
 
 function TodaySection({ data, today, dayNumber }: { data: TripData; today: string; dayNumber: number }) {
   const { trip, stays, legs, ideas, notes, dayCities } = data;
+  const now = useNow();
+  const next = now && now.day === today ? nextUp(now, legs, ideas) : undefined;
   const cities = citiesOnDay(stays, today, dayCities);
   const todaysLegs = legs.filter((leg) => leg.departDate === today || leg.arriveDate === today);
   const activities = ideas.filter((idea) => idea.day === today);
@@ -230,6 +240,13 @@ function TodaySection({ data, today, dayNumber }: { data: TripData; today: strin
 
   return (
     <>
+      {next && now ? (
+        <section>
+          <SectionHeader title="Next up" trailing={countdown(minutesUntil(now, next.day, next.at))} />
+          <NextUpCard item={next} today={today} />
+        </section>
+      ) : null}
+
       <section>
         <SectionHeader
           title={formatWeekday(today)}
@@ -249,12 +266,18 @@ function TodaySection({ data, today, dayNumber }: { data: TripData; today: strin
           ) : null}
           {todaysLegs.map((leg) => (
             <div key={leg.id} className="space-y-2">
-              <LegSummary leg={leg} />
+              <div className="flex items-center gap-1">
+                <LegSummary leg={leg} />
+                <PinLink href={legTransitHref(leg)} label={`Directions to ${leg.destination}`} />
+              </div>
               <PhotoStrip title={`${leg.origin} → ${leg.destination}`} photos={leg.photos} />
             </div>
           ))}
           {activities.map((idea) => (
-            <IdeaSummary key={idea.id} idea={idea} />
+            <div key={idea.id} className="flex items-center gap-1">
+              <IdeaSummary idea={idea} />
+              <PinLink href={ideaMapsHref(idea)} label={`Open ${idea.name} in Google Maps`} />
+            </div>
           ))}
           {note ? (
             <p className="flex gap-2 whitespace-pre-wrap text-[15px] text-dim">
@@ -262,7 +285,9 @@ function TodaySection({ data, today, dayNumber }: { data: TripData; today: strin
               {note}
             </p>
           ) : null}
-          {todaysLegs.length + activities.length === 0 && !note ? (
+          {activities.length === 0 && unplannedIn(ideas, cities.map((city) => city.id)).length > 0 ? (
+            <Suggestions day={today} cities={cities} ideas={ideas} />
+          ) : todaysLegs.length + activities.length === 0 && !note ? (
             <p className="text-[15px] text-dim">Nothing planned — a free day.</p>
           ) : null}
         </Card>
@@ -290,8 +315,8 @@ function TodaySection({ data, today, dayNumber }: { data: TripData; today: strin
               </div>
               {tonight.address ? <p className="text-[15px]">{tonight.address}</p> : null}
               {tonight.bookingRef ? (
-                <p className="tnum text-[15px] text-dim">
-                  Booking no. <span className="select-all text-ink">{tonight.bookingRef}</span>
+                <p className="flex items-center gap-2 text-[15px] text-dim">
+                  Booking no. <CopyChip value={tonight.bookingRef} />
                 </p>
               ) : null}
               <PhotoStrip title={tonight.name} photos={tonight.photos} />
@@ -311,7 +336,111 @@ function TodaySection({ data, today, dayNumber }: { data: TripData; today: strin
           )}
         </section>
       )}
+
+      {lastDay ? null : <TomorrowCard data={data} tomorrow={addDays(today, 1)} />}
     </>
+  );
+}
+
+function countdown(minutes: number): string {
+  if (minutes < 1) return "now";
+  if (minutes < 60) return `in ${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest === 0 ? `in ${hours}h` : `in ${hours}h ${rest}m`;
+}
+
+function NextUpCard({ item, today }: { item: NextItem<LegRow, IdeaRow>; today: string }) {
+  const tomorrow = item.day !== today;
+  if (item.kind === "leg") {
+    const { leg } = item;
+    return (
+      <Card className="space-y-3">
+        <div className="flex items-center gap-1">
+          <LegSummary leg={leg} />
+          <PinLink href={legTransitHref(leg)} label={`Directions to ${leg.destination}`} />
+        </div>
+        {tomorrow || leg.bookingRef ? (
+          <div className="flex flex-wrap items-center gap-2 text-[15px] text-dim">
+            {tomorrow ? <Tag>Tomorrow</Tag> : null}
+            {leg.bookingRef ? (
+              <>
+                Booking no. <CopyChip value={leg.bookingRef} />
+              </>
+            ) : null}
+          </div>
+        ) : null}
+        <PhotoStrip title={`${leg.origin} → ${leg.destination}`} photos={leg.photos} />
+      </Card>
+    );
+  }
+  const { idea } = item;
+  return (
+    <Card className="space-y-3">
+      <div className="flex items-center gap-1">
+        <IdeaSummary idea={idea} showCity />
+        <PinLink href={ideaMapsHref(idea)} label={`Open ${idea.name} in Google Maps`} />
+      </div>
+      {tomorrow ? <Tag>Tomorrow</Tag> : null}
+    </Card>
+  );
+}
+
+function TomorrowCard({ data, tomorrow }: { data: TripData; tomorrow: string }) {
+  const { stays, legs, ideas, dayCities } = data;
+  const cities = citiesOnDay(stays, tomorrow, dayCities);
+  const leaving = stays.find((stay) => stay.status === "BOOKED" && stay.checkOut === tomorrow);
+  const firstLeg = legs.find((leg) => leg.departDate === tomorrow);
+  const activities = ideas.filter((idea) => idea.day === tomorrow);
+  const firstTimed = activities
+    .filter((idea) => idea.time)
+    .sort((a, b) => a.time!.localeCompare(b.time!))[0];
+
+  return (
+    <section>
+      <SectionHeader
+        title="Tomorrow"
+        trailing={
+          <Link href={`/days#day-${tomorrow}`} className="text-accent">
+            {formatShortDay(tomorrow)}
+          </Link>
+        }
+      />
+      <Card className="space-y-2.5 text-[15px]">
+        {cities.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {cities.map((city) => (
+              <CityTag key={city.id} city={city} />
+            ))}
+          </div>
+        ) : null}
+        {leaving ? (
+          <p className="flex items-center gap-2">
+            <LogOut className="h-4 w-4 shrink-0 text-orange" />
+            <span className="min-w-0">
+              Check out of {leaving.name} by <span className="tnum font-semibold">{leaving.checkOutTime}</span>
+            </span>
+          </p>
+        ) : null}
+        {firstLeg ? (
+          <p className="flex items-center gap-2">
+            <TrainFront className="h-4 w-4 shrink-0 text-dim" />
+            <span className="min-w-0 truncate">
+              {firstLeg.departTime ? <span className="tnum font-semibold">{firstLeg.departTime} </span> : null}
+              {firstLeg.origin} → {firstLeg.destination}
+            </span>
+          </p>
+        ) : null}
+        <p className="flex items-center gap-2 text-dim">
+          <Lightbulb className="h-4 w-4 shrink-0" />
+          {activities.length === 0
+            ? "Nothing planned yet"
+            : `${plural(activities.length, "activity", "activities")} planned${
+                firstTimed ? ` · first at ${firstTimed.time}, ${firstTimed.name}` : ""
+              }`}
+        </p>
+      </Card>
+    </section>
   );
 }
 

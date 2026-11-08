@@ -1,11 +1,12 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { ExternalLink, Pencil, Star, Ticket } from "lucide-react";
+import { CalendarDays, ExternalLink, Pencil, Star, Ticket } from "lucide-react";
 import { FormGroup, GroupLabel } from "@/components/form";
 import { IDEA_ICON, TRAVEL_COLOR, TRAVEL_ICON } from "@/components/icons";
 import { PhotoStrip } from "@/components/PhotoViewer";
 import { Sheet } from "@/components/Sheet";
+import { CopyChip } from "@/components/quick";
 import { CityTag, IconCircle, MapButtons, Tag } from "@/components/ui";
 import { daysBetween, formatDay, plural } from "@/lib/dates";
 import { formatMoney, IDEA_KIND_COLOR, IDEA_KIND_LABEL, PAYMENT_LABEL, TRAVEL_MODE_LABEL } from "@/lib/labels";
@@ -99,7 +100,7 @@ function OpenLink({ href }: { href: string | null }) {
 }
 
 function Copyable({ value }: { value: string }) {
-  return <span className="select-all text-ink">{value}</span>;
+  return <CopyChip value={value} />;
 }
 
 function money(item: { price: number | null; currency: StayRow["currency"] }) {
@@ -234,7 +235,17 @@ export function LegDetail({ leg, onEdit, onDone }: { leg: LegRow; onEdit: () => 
   );
 }
 
-export function IdeaDetail({ idea, onEdit, onDone }: { idea: IdeaRow; onEdit: () => void; onDone: () => void }) {
+export function IdeaDetail({
+  idea,
+  onEdit,
+  onMove,
+  onDone,
+}: {
+  idea: IdeaRow;
+  onEdit: () => void;
+  onMove?: () => void;
+  onDone: () => void;
+}) {
   const Icon = IDEA_ICON[idea.kind];
   return (
     <Sheet title={idea.day ? "Activity" : "Idea"} onDone={onDone} leading={{ label: "Edit", onClick: onEdit }}>
@@ -268,6 +279,17 @@ export function IdeaDetail({ idea, onEdit, onDone }: { idea: IdeaRow; onEdit: ()
             label="Plan"
             rows={[["Day", idea.day ? at(idea.day, idea.time) : "Not on a day yet"]]}
           />
+
+          {onMove && idea.day ? (
+            <button
+              type="button"
+              onClick={onMove}
+              className="pressable flex h-10 w-full items-center justify-center gap-1.5 rounded-[12px] bg-fill text-[15px] font-semibold text-accent"
+            >
+              <CalendarDays className="h-4 w-4" />
+              Move to another day
+            </button>
+          ) : null}
 
           <MapButtons query={[idea.name, idea.city?.name, "Japan"].filter(Boolean).join(", ")} mapsUrl={idea.mapsUrl} />
 

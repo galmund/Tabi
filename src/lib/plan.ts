@@ -175,3 +175,49 @@ export function dayOptions<S extends StayLike>(
     planned: ideas.filter((idea) => idea.day === day).length,
   }));
 }
+
+type TimedLeg = LegLike & { departTime: string | null };
+type TimedIdea = { id: string; day: string | null; time: string | null };
+
+export type NextItem<L, I> = { kind: "leg"; at: string; day: string; leg: L } | { kind: "idea"; at: string; day: string; idea: I };
+
+const minutesOf = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
+
+export function nextUp<L extends TimedLeg, I extends TimedIdea>(
+  now: { day: string; time: string },
+  legs: L[],
+  ideas: I[],
+  horizonMinutes = 12 * 60
+): NextItem<L, I> | undefined {
+  const tomorrow = addDays(now.day, 1);
+  const items: NextItem<L, I>[] = [
+    ...legs.flatMap((leg) =>
+      leg.departTime ? [{ kind: "leg" as const, at: leg.departTime, day: leg.departDate, leg }] : []
+    ),
+    ...ideas.flatMap((idea) =>
+      idea.day && idea.time ? [{ kind: "idea" as const, at: idea.time, day: idea.day, idea }] : []
+    ),
+  ];
+  const ahead = (item: NextItem<L, I>) => {
+    if (item.day === now.day) return minutesOf(item.at) - minutesOf(now.time);
+    if (item.day === tomorrow) return 24 * 60 - minutesOf(now.time) + minutesOf(item.at);
+    return -1;
+  };
+  return items
+    .map((item) => ({ item, minutes: ahead(item) }))
+    .filter(({ item, minutes }) => minutes >= 0 && (item.day === now.day || minutes <= horizonMinutes))
+    .sort((a, b) => a.minutes - b.minutes || (a.item.kind === "leg" ? -1 : 1))[0]?.item;
+}
+
+export function minutesUntil(now: { day: string; time: string }, day: string, time: string): number {
+  return daysBetween(now.day, day) * 24 * 60 + minutesOf(time) - minutesOf(now.time);
+}
+
+export function unplannedIn<I extends { day: string | null; cityId: string | null; priority: string; cityOrder: number }>(
+  ideas: I[],
+  cityIds: string[]
+): I[] {
+  return ideas
+    .filter((idea) => !idea.day && idea.cityId && cityIds.includes(idea.cityId))
+    .sort((a, b) => (a.priority === b.priority ? a.cityOrder - b.cityOrder : a.priority === "MUST" ? -1 : 1));
+}

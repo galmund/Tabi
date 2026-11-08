@@ -2,20 +2,23 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { BedDouble, CalendarDays, Plane, Plus, StickyNote } from "lucide-react";
+import { BedDouble, Plane, Plus, StickyNote } from "lucide-react";
 import { addDayCity, moveActivity, saveDayNote, scheduleIdea, setDayCity, shiftLeg } from "@/app/actions";
 import { useActivityDrag } from "@/components/ActivityDrag";
 import { LegSheet } from "@/components/BookingSheets";
 import { EditButton, IdeaDetail, LegDetail } from "@/components/DetailSheets";
 import { DayPickerSheet, IdeaSheet } from "@/components/IdeaSheets";
+import { DayStrip } from "@/components/DayStrip";
 import { NavBar } from "@/components/NavBar";
+import { ideaMapsHref, legTransitHref, PinLink } from "@/components/quick";
+import { Suggestions } from "@/components/Suggestions";
 import { IdeaSummary, LegSummary } from "@/components/rows";
 import { FormGroup, GroupLabel } from "@/components/form";
 import { Sheet } from "@/components/Sheet";
 import { CityDot, CityTag, Tag } from "@/components/ui";
 import { addDays, daysBetween, formatDay, formatRange, plural } from "@/lib/dates";
 import { useToday } from "@/lib/device";
-import { bookedStayOn, dayOptions, overnightLegOn, type DayOption } from "@/lib/plan";
+import { bookedStayOn, dayOptions, nightStates, overnightLegOn, type DayOption } from "@/lib/plan";
 import type { CityRow, IdeaRow, LegRow, TripData } from "@/lib/trip";
 
 type Editing =
@@ -40,6 +43,9 @@ export function DaysView({ data, serverToday }: { data: TripData; serverToday: s
   const [shifted, setShifted] = useState<{ key: string; legs: LegRow[] } | null>(null);
   const legs = shifted?.key === legKey ? shifted.legs : data.legs;
   const days = dayOptions(trip, stays, ideas, dayCities);
+  const missingNights = nightStates(trip, stays, legs)
+    .filter((state) => state.kind === "missing")
+    .map((state) => state.night);
   const [editing, setEditing] = useState<Editing>(null);
   const [, startTransition] = useTransition();
 
@@ -105,6 +111,7 @@ export function DaysView({ data, serverToday }: { data: TripData; serverToday: s
   return (
     <>
       <NavBar title="Days" eyebrow={`${formatRange(trip.startDate, trip.endDate)} · ${plural(days.length, "day")}`} />
+      <DayStrip days={days} today={today} missing={missingNights} />
 
       <div className="rise-in space-y-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-5 lg:space-y-0">
         {days.map((option) => (
@@ -118,6 +125,7 @@ export function DaysView({ data, serverToday }: { data: TripData; serverToday: s
             note={notes.find((entry) => entry.day === option.day)?.text ?? ""}
             stay={bookedStayOn(stays, option.day)}
             transit={overnightLegOn(legs, option.day)}
+            allIdeas={ideas}
             onEdit={setEditing}
             drag={drag}
             legDrag={legDrag}
@@ -140,6 +148,7 @@ export function DaysView({ data, serverToday }: { data: TripData; serverToday: s
           key={viewingIdea.id}
           idea={viewingIdea}
           onEdit={() => setEditing({ kind: "idea", idea: viewingIdea, fromDetail: true })}
+          onMove={() => setEditing({ kind: "move", idea: viewingIdea })}
           onDone={() => setEditing(null)}
         />
       ) : null}
@@ -200,6 +209,7 @@ function DayCard({
   note,
   stay,
   transit,
+  allIdeas,
   onEdit,
   drag,
   legDrag,
@@ -212,6 +222,7 @@ function DayCard({
   note: string;
   stay: TripData["stays"][number] | undefined;
   transit: LegRow | undefined;
+  allIdeas: IdeaRow[];
   onEdit: (editing: Editing) => void;
   drag: ReturnType<typeof useActivityDrag>;
   legDrag: ReturnType<typeof useActivityDrag>;
@@ -226,7 +237,7 @@ function DayCard({
         activityRef(node);
         legRef(node);
       }}
-      className={`scroll-mt-[calc(var(--safe-top)+56px)] overflow-hidden rounded-card bg-elev transition-shadow duration-150 ${
+      className={`scroll-mt-[calc(var(--safe-top)+124px)] lg:scroll-mt-[calc(var(--safe-top)+132px)] overflow-hidden rounded-card bg-elev transition-shadow duration-150 ${
         dropping ? "ring-2 ring-accent/60" : isToday ? "ring-2 ring-accent" : ""
       }`}
     >
@@ -272,6 +283,7 @@ function DayCard({
               >
                 <LegSummary leg={leg} />
               </button>
+              <PinLink href={legTransitHref(leg)} label={`Directions to ${leg.destination}`} />
               <EditButton label={`Edit ${leg.origin} to ${leg.destination}`} onClick={() => onEdit({ kind: "leg", leg })} />
             </li>
           ))}
@@ -297,19 +309,21 @@ function DayCard({
                 >
                   <IdeaSummary idea={idea} />
                 </button>
-                <button
-                  type="button"
-                  aria-label={`Move ${idea.name} to another day`}
-                  onClick={() => onEdit({ kind: "move", idea })}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-accent active:bg-fill"
-                >
-                  <CalendarDays className="h-[18px] w-[18px]" />
-                </button>
+                <PinLink href={ideaMapsHref(idea)} label={`Open ${idea.name} in Google Maps`} />
                 <EditButton label={`Edit ${idea.name}`} onClick={() => onEdit({ kind: "idea", idea })} />
               </div>
             </li>
           ))}
         </ul>
+      ) : null}
+
+      {activities.length === 0 && option.cities.length > 0 ? (
+        <Suggestions
+          day={option.day}
+          cities={option.cities}
+          ideas={allIdeas}
+          className={`px-4 py-2.5 ${legs.length > 0 ? "border-t border-line" : ""}`}
+        />
       ) : null}
 
       <DayNote day={option.day} initial={note} />

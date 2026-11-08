@@ -7,6 +7,7 @@ import { deleteStay, setStayStatus } from "@/app/actions";
 import { LegSheet, StaySheet, type StayDefaults } from "@/components/BookingSheets";
 import { EditButton, LegDetail, StayDetail } from "@/components/DetailSheets";
 import { NavBar } from "@/components/NavBar";
+import { CopyChip } from "@/components/quick";
 import { LegSummary, Thumb } from "@/components/rows";
 import { SegmentedTrack, segmentClass } from "@/components/Segmented";
 import { EmptyState, GroupedList, SectionFooter, Tag } from "@/components/ui";
@@ -212,13 +213,13 @@ function MetaLine({
   const parts = [
     price !== null && currency ? formatMoney(price, currency) : null,
     payment ? PAYMENT_LABEL[payment] : null,
-    bookingRef ? `#${bookingRef}` : null,
   ].filter(Boolean);
-  if (parts.length === 0 && !outside) return null;
+  if (parts.length === 0 && !outside && !bookingRef) return null;
   return (
     <div className={`mt-1.5 flex flex-wrap items-center gap-1.5 ${indent ? "pl-12" : ""}`}>
       {outside ? <Tag tone="orange">Outside trip dates</Tag> : null}
       {parts.length > 0 ? <span className="tnum text-[14px] text-dim">{parts.join(" · ")}</span> : null}
+      {bookingRef ? <CopyChip value={bookingRef} prefix="#" /> : null}
     </div>
   );
 }

@@ -34,3 +34,15 @@ export function useIsOffline(): boolean {
     () => false
   );
 }
+
+const deviceClock = () => {
+  const now = new Date();
+  return `${deviceToday()} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+};
+
+export function useNow(): { day: string; time: string } | null {
+  const value = useSyncExternalStore(subscribe, deviceClock, () => null);
+  if (!value) return null;
+  const [day, time] = value.split(" ");
+  return { day, time };
+}
