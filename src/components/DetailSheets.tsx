@@ -6,7 +6,7 @@ import { FormGroup, GroupLabel } from "@/components/form";
 import { IDEA_ICON, TRAVEL_COLOR, TRAVEL_ICON } from "@/components/icons";
 import { PhotoStrip } from "@/components/PhotoViewer";
 import { Sheet } from "@/components/Sheet";
-import { CopyChip } from "@/components/quick";
+import { CopyChip, CopyText } from "@/components/quick";
 import { CityTag, IconCircle, MapButtons, Tag } from "@/components/ui";
 import { daysBetween, formatDay, plural } from "@/lib/dates";
 import { formatMoney, IDEA_KIND_COLOR, IDEA_KIND_LABEL, PAYMENT_LABEL, TRAVEL_MODE_LABEL } from "@/lib/labels";
@@ -32,7 +32,9 @@ function Hero({ icon, title, children }: { icon?: ReactNode; title: string; chil
     <div className="flex items-start gap-3 px-1">
       {icon}
       <div className="min-w-0 flex-1">
-        <h2 className="text-[22px] font-bold leading-tight tracking-tight">{title}</h2>
+        <h2 className="text-[22px] font-bold leading-tight tracking-tight">
+          <CopyText value={title}>{title}</CopyText>
+        </h2>
         {children ? <div className="mt-1.5 flex flex-wrap items-center gap-1.5">{children}</div> : null}
       </div>
     </div>

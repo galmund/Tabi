@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type KeyboardEvent, type MouseEvent } from "react";
+import { useEffect, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import { Check, Copy, MapPin } from "lucide-react";
 import { googleMapsUrl } from "@/lib/labels";
 
@@ -29,8 +29,25 @@ export function PinLink({ href, label }: { href: string; label: string }) {
   );
 }
 
-// Rendered as a span so it can sit inside a row's <button> without nesting buttons.
-export function CopyChip({ value, prefix = "" }: { value: string; prefix?: string }) {
+function copyWithSelection(value: string): boolean {
+  const field = document.createElement("textarea");
+  field.value = value;
+  field.setAttribute("readonly", "");
+  field.style.position = "fixed";
+  field.style.opacity = "0";
+  document.body.appendChild(field);
+  field.select();
+  field.setSelectionRange(0, value.length);
+  try {
+    return document.execCommand("copy");
+  } catch {
+    return false;
+  } finally {
+    field.remove();
+  }
+}
+
+function useCopy(value: string) {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -42,11 +59,45 @@ export function CopyChip({ value, prefix = "" }: { value: string; prefix?: strin
   const copy = (event: MouseEvent | KeyboardEvent) => {
     event.stopPropagation();
     event.preventDefault();
-    navigator.clipboard?.writeText(value).then(
-      () => setCopied(true),
-      () => undefined
-    );
+    const done = () => setCopied(true);
+    if (!navigator.clipboard) {
+      if (copyWithSelection(value)) done();
+      return;
+    }
+    navigator.clipboard.writeText(value).then(done, () => {
+      if (copyWithSelection(value)) done();
+    });
   };
+
+  return { copied, copy };
+}
+
+export function CopyText({ value, children, className = "" }: { value: string; children: ReactNode; className?: string }) {
+  const { copied, copy } = useCopy(value);
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      title="Copy name"
+      aria-label={`Copy ${value}`}
+      className={`group inline text-left active:opacity-60 ${className}`}
+    >
+      {children}
+      {copied ? (
+        <span className="ml-1.5 inline-flex translate-y-[-2px] items-center gap-0.5 rounded-full bg-good/15 px-1.5 py-0.5 align-middle text-[12px] font-semibold text-good">
+          <Check className="h-3 w-3" />
+          Copied
+        </span>
+      ) : (
+        <Copy className="ml-1.5 inline h-[0.7em] w-[0.7em] translate-y-[-1px] align-middle text-faint group-hover:text-dim" />
+      )}
+    </button>
+  );
+}
+
+// Rendered as a span so it can sit inside a row's <button> without nesting buttons.
+export function CopyChip({ value, prefix = "" }: { value: string; prefix?: string }) {
+  const { copied, copy } = useCopy(value);
 
   return (
     <span

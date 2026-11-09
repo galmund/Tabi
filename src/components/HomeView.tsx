@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { NavBar } from "@/components/NavBar";
 import { PhotoStrip } from "@/components/PhotoViewer";
-import { CopyChip, ideaMapsHref, legTransitHref, PinLink } from "@/components/quick";
+import { CopyChip, CopyText, ideaMapsHref, legTransitHref, PinLink } from "@/components/quick";
 import { RouteBar } from "@/components/RouteBar";
 import { Suggestions } from "@/components/Suggestions";
 import { IdeaSummary, LegSummary } from "@/components/rows";
@@ -299,7 +299,9 @@ function TodaySection({ data, today, dayNumber }: { data: TripData; today: strin
           {tonight ? (
             <Card className="space-y-3">
               <div>
-                <p className="text-[20px] font-bold leading-tight">{tonight.name}</p>
+                <p className="text-[20px] font-bold leading-tight">
+                  <CopyText value={tonight.name}>{tonight.name}</CopyText>
+                </p>
                 <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                   <CityTag city={tonight.city} />
                   {tonight.checkIn === today ? (
