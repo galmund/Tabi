@@ -250,8 +250,17 @@ export async function saveLeg(_: ActionResult | null, form: FormData): Promise<A
       ...money(form),
     };
 
-    if (id) await prisma.travelLeg.update({ where: { id }, data });
-    else await prisma.travelLeg.create({ data: { ...data, ...(await newPhotos(form)) } });
+    if (id) {
+      const before = await prisma.travelLeg.findUnique({ where: { id }, select: { departDate: true, arriveDate: true } });
+      await prisma.travelLeg.update({
+        where: { id },
+        data: {
+          ...data,
+          ...(before?.departDate !== data.departDate ? { departOrder: null } : {}),
+          ...(before?.arriveDate !== data.arriveDate ? { arriveOrder: null } : {}),
+        },
+      });
+    } else await prisma.travelLeg.create({ data: { ...data, ...(await newPhotos(form)) } });
     return id ? "Travel saved" : "Travel added";
   });
 }
@@ -263,12 +272,12 @@ export async function deleteLeg(id: string): Promise<ActionResult> {
 }
 
 async function nextDayOrder(dayValue: string): Promise<number> {
-  const last = await prisma.idea.findFirst({
-    where: { day: dayValue },
-    orderBy: { dayOrder: "desc" },
-    select: { dayOrder: true },
-  });
-  return (last?.dayOrder ?? -1) + 1;
+  const [idea, departing, arriving] = await Promise.all([
+    prisma.idea.aggregate({ where: { day: dayValue }, _max: { dayOrder: true } }),
+    prisma.travelLeg.aggregate({ where: { departDate: dayValue }, _max: { departOrder: true } }),
+    prisma.travelLeg.aggregate({ where: { arriveDate: dayValue }, _max: { arriveOrder: true } }),
+  ]);
+  return Math.max(idea._max.dayOrder ?? -1, departing._max.departOrder ?? -1, arriving._max.arriveOrder ?? -1) + 1;
 }
 
 async function firstCityOrder(cityValue: string | null): Promise<number> {
@@ -355,16 +364,53 @@ export async function scheduleIdea(id: string, dayValue: string | null): Promise
   });
 }
 
-export async function moveActivity(id: string, dayValue: string, ids: string[]): Promise<ActionResult> {
+export async function arrangeDay(
+  dayValue: string,
+  keys: string[],
+  moved: string,
+  fromDay: string
+): Promise<ActionResult> {
   return attempt(async () => {
-    if (!isIsoDay(dayValue)) throw new InvalidInput("That isn't a valid day.");
-    if (!ids.includes(id)) throw new InvalidInput("That activity isn't in the new order.");
-    await prisma.$transaction([
-      prisma.idea.update({ where: { id }, data: { day: dayValue } }),
-      ...ids.map((ideaId, index) =>
-        prisma.idea.updateMany({ where: { id: ideaId, day: dayValue }, data: { dayOrder: index } })
-      ),
-    ]);
+    if (!isIsoDay(dayValue) || !isIsoDay(fromDay)) throw new InvalidInput("That isn't a valid day.");
+    if (!keys.includes(moved)) throw new InvalidInput("That item isn't in the new order.");
+    const [kind, movedId] = moved.split(":");
+    const steps = [];
+    if (kind === "i") {
+      steps.push(prisma.idea.update({ where: { id: movedId }, data: { day: dayValue } }));
+    } else if (fromDay !== dayValue) {
+      const leg = await prisma.travelLeg.findUnique({
+        where: { id: movedId },
+        select: { departDate: true, arriveDate: true },
+      });
+      if (!leg) throw new InvalidInput("That travel no longer exists.");
+      const shift = daysBetween(fromDay, dayValue);
+      steps.push(
+        prisma.travelLeg.update({
+          where: { id: movedId },
+          data: {
+            departDate: addDays(leg.departDate, shift),
+            arriveDate: leg.arriveDate ? addDays(leg.arriveDate, shift) : null,
+            departOrder: null,
+            arriveOrder: null,
+          },
+        })
+      );
+    }
+    keys.forEach((key, index) => {
+      const [itemKind, id] = key.split(":");
+      if (itemKind === "i") {
+        steps.push(prisma.idea.updateMany({ where: { id, day: dayValue }, data: { dayOrder: index } }));
+      } else {
+        steps.push(
+          prisma.travelLeg.updateMany({ where: { id, departDate: dayValue }, data: { departOrder: index } }),
+          prisma.travelLeg.updateMany({
+            where: { id, arriveDate: dayValue, NOT: { departDate: dayValue } },
+            data: { arriveOrder: index },
+          })
+        );
+      }
+    });
+    await prisma.$transaction(steps);
   });
 }
 
@@ -380,23 +426,6 @@ export async function moveIdea(id: string, cityValue: string | null, ids: string
         prisma.idea.updateMany({ where: { id: ideaId, cityId: cityValue }, data: { cityOrder: index } })
       ),
     ]);
-  });
-}
-
-export async function shiftLeg(id: string, fromDay: string, toDay: string): Promise<ActionResult> {
-  return attempt(async () => {
-    if (!isIsoDay(fromDay) || !isIsoDay(toDay)) throw new InvalidInput("That isn't a valid day.");
-    const shift = daysBetween(fromDay, toDay);
-    if (shift === 0) return;
-    const leg = await prisma.travelLeg.findUnique({ where: { id }, select: { departDate: true, arriveDate: true } });
-    if (!leg) throw new InvalidInput("That travel no longer exists.");
-    await prisma.travelLeg.update({
-      where: { id },
-      data: {
-        departDate: addDays(leg.departDate, shift),
-        arriveDate: leg.arriveDate ? addDays(leg.arriveDate, shift) : null,
-      },
-    });
   });
 }
 

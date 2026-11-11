@@ -62,7 +62,7 @@ export function useActivityDrag({
 
     const rows = (ordered ? latest.current.order(day) : [])
       .filter((id) => id !== active.id)
-      .map((id) => rowNodes.current.get(id)?.getBoundingClientRect())
+      .map((id) => (rowNodes.current.get(`${id}@${day}`) ?? rowNodes.current.get(id))?.getBoundingClientRect())
       .filter((rect): rect is DOMRect => !!rect);
     const index = grid
       ? rows.filter((rect) => rect.bottom < y || (y >= rect.top && rect.left + rect.width / 2 < x)).length
@@ -266,7 +266,7 @@ export function useActivityDrag({
     draggingId: active?.id ?? null,
     targetDay: active ? targetDay : null,
     dayRef: (day: string) => register(dayNodes, day),
-    rowRef: (id: string) => register(rowNodes, id),
+    rowRef: (id: string, day?: string) => register(rowNodes, day ? `${id}@${day}` : id),
     anchorRef: (day: string) => register(anchorNodes, day),
     handle,
     overlay,

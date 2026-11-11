@@ -110,6 +110,8 @@ model TravelLeg {
   departTime  String?
   arriveDate  String?
   arriveTime  String?
+  departOrder Int?
+  arriveOrder Int?
   carrier     String?
   bookingRef  String?
   seat        String?

@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { BedDouble, Plane, Plus, StickyNote } from "lucide-react";
-import { addDayCity, moveActivity, saveDayNote, scheduleIdea, setDayCity, shiftLeg } from "@/app/actions";
+import { addDayCity, arrangeDay, saveDayNote, scheduleIdea, setDayCity } from "@/app/actions";
 import { useActivityDrag } from "@/components/ActivityDrag";
 import { LegSheet } from "@/components/BookingSheets";
 import { EditButton, IdeaDetail, LegDetail } from "@/components/DetailSheets";
@@ -36,12 +36,13 @@ type Editing =
 export function DaysView({ data, serverToday }: { data: TripData; serverToday: string }) {
   const today = useToday(serverToday);
   const { trip, stays, notes, cities, dayCities } = data;
-  const serverKey = data.ideas.map((idea) => `${idea.id}:${idea.day}:${idea.dayOrder}`).join(",");
-  const [moved, setMoved] = useState<{ key: string; ideas: IdeaRow[] } | null>(null);
-  const ideas = moved?.key === serverKey ? moved.ideas : data.ideas;
-  const legKey = data.legs.map((leg) => `${leg.id}:${leg.departDate}:${leg.arriveDate}`).join(",");
-  const [shifted, setShifted] = useState<{ key: string; legs: LegRow[] } | null>(null);
-  const legs = shifted?.key === legKey ? shifted.legs : data.legs;
+  const serverKey = [
+    ...data.ideas.map((idea) => `${idea.id}:${idea.day}:${idea.dayOrder}`),
+    ...data.legs.map((leg) => `${leg.id}:${leg.departDate}:${leg.arriveDate}:${leg.departOrder}:${leg.arriveOrder}`),
+  ].join(",");
+  const [arranged, setArranged] = useState<{ key: string; ideas: IdeaRow[]; legs: LegRow[] } | null>(null);
+  const ideas = arranged?.key === serverKey ? arranged.ideas : data.ideas;
+  const legs = arranged?.key === serverKey ? arranged.legs : data.legs;
   const days = dayOptions(trip, stays, ideas, dayCities);
   const missingNights = nightStates(trip, stays, legs)
     .filter((state) => state.kind === "missing")
@@ -51,50 +52,48 @@ export function DaysView({ data, serverToday }: { data: TripData; serverToday: s
 
   const drag = useActivityDrag({
     days: days.map((option) => option.day),
-    order: (day) => ideas.filter((idea) => idea.day === day).map((idea) => idea.id),
-    onDrop: (id, day, ids) => {
-      const next = ideas
-        .map((idea) => (idea.id === id ? { ...idea, day } : idea))
-        .map((idea) => (idea.day === day ? { ...idea, dayOrder: ids.indexOf(idea.id) } : idea))
-        .sort((a, b) => a.dayOrder - b.dayOrder);
-      setMoved({ key: serverKey, ideas: next });
-      startTransition(async () => {
-        await moveActivity(id, day, ids);
-      });
-    },
-    renderGhost: (id) => {
-      const idea = ideas.find((candidate) => candidate.id === id);
-      return idea ? <IdeaSummary idea={idea} /> : null;
-    },
-  });
-  const legDrag = useActivityDrag({
-    ordered: false,
-    days: days.map((option) => option.day),
-    order: () => [],
-    onDrop: (id, day, _ids, fromDay) => {
+    order: (day) => dayItems(day, ideas, legs).map((item) => item.key),
+    onDrop: (moved, day, keys, fromDay) => {
+      const [kind, movedId] = moved.split(":");
       const shift = daysBetween(fromDay, day);
-      const next = legs
+      const position = (key: string) => keys.indexOf(key);
+      const nextIdeas = ideas
+        .map((idea) => (kind === "i" && idea.id === movedId ? { ...idea, day } : idea))
+        .map((idea) => (idea.day === day ? { ...idea, dayOrder: position(`i:${idea.id}`) } : idea))
+        .sort((a, b) => a.dayOrder - b.dayOrder);
+      const nextLegs = legs
         .map((leg) =>
-          leg.id === id
+          kind === "l" && leg.id === movedId && shift !== 0
             ? {
                 ...leg,
                 departDate: addDays(leg.departDate, shift),
                 arriveDate: leg.arriveDate ? addDays(leg.arriveDate, shift) : null,
+                departOrder: null,
+                arriveOrder: null,
               }
             : leg
+        )
+        .map((leg) =>
+          leg.departDate === day
+            ? { ...leg, departOrder: position(`l:${leg.id}`) }
+            : leg.arriveDate === day
+              ? { ...leg, arriveOrder: position(`l:${leg.id}`) }
+              : leg
         )
         .sort(
           (a, b) =>
             a.departDate.localeCompare(b.departDate) || (a.departTime ?? "~").localeCompare(b.departTime ?? "~")
         );
-      setShifted({ key: legKey, legs: next });
+      setArranged({ key: serverKey, ideas: nextIdeas, legs: nextLegs });
       startTransition(async () => {
-        await shiftLeg(id, fromDay, day);
+        await arrangeDay(day, keys, moved, fromDay);
       });
     },
-    renderGhost: (id) => {
-      const leg = legs.find((candidate) => candidate.id === id);
-      return leg ? <LegSummary leg={leg} /> : null;
+    renderGhost: (key) => {
+      const [kind, id] = key.split(":");
+      const idea = kind === "i" ? ideas.find((candidate) => candidate.id === id) : undefined;
+      const leg = kind === "l" ? legs.find((candidate) => candidate.id === id) : undefined;
+      return idea ? <IdeaSummary idea={idea} /> : leg ? <LegSummary leg={leg} /> : null;
     },
   });
   const viewingIdea = editing?.kind === "view-idea" ? ideas.find((idea) => idea.id === editing.id) : undefined;
@@ -120,20 +119,17 @@ export function DaysView({ data, serverToday }: { data: TripData; serverToday: s
             option={option}
             isToday={option.day === today}
             isLast={option.day === trip.endDate}
-            legs={legs.filter((leg) => leg.departDate === option.day || leg.arriveDate === option.day)}
-            activities={ideas.filter((idea) => idea.day === option.day)}
+            items={dayItems(option.day, ideas, legs)}
             note={notes.find((entry) => entry.day === option.day)?.text ?? ""}
             stay={bookedStayOn(stays, option.day)}
             transit={overnightLegOn(legs, option.day)}
             allIdeas={ideas}
             onEdit={setEditing}
             drag={drag}
-            legDrag={legDrag}
           />
         ))}
       </div>
       {drag.overlay}
-      {legDrag.overlay}
 
       {editing?.kind === "idea" ? (
         <IdeaSheet
@@ -200,43 +196,55 @@ export function DaysView({ data, serverToday }: { data: TripData; serverToday: s
   );
 }
 
+type DayItem = { key: string; order: number } & (
+  | { kind: "leg"; leg: LegRow }
+  | { kind: "idea"; idea: IdeaRow }
+);
+
+function dayItems(day: string, ideas: IdeaRow[], legs: LegRow[]): DayItem[] {
+  const legItems: DayItem[] = legs
+    .filter((leg) => leg.departDate === day || leg.arriveDate === day)
+    .map((leg) => ({
+      key: `l:${leg.id}`,
+      order: (leg.departDate === day ? leg.departOrder : leg.arriveOrder) ?? -1,
+      kind: "leg",
+      leg,
+    }));
+  const ideaItems: DayItem[] = ideas
+    .filter((idea) => idea.day === day)
+    .map((idea) => ({ key: `i:${idea.id}`, order: idea.dayOrder, kind: "idea", idea }));
+  return [...legItems, ...ideaItems].sort((a, b) => a.order - b.order);
+}
+
 function DayCard({
   option,
   isToday,
   isLast,
-  legs,
-  activities,
+  items,
   note,
   stay,
   transit,
   allIdeas,
   onEdit,
   drag,
-  legDrag,
 }: {
   option: DayOption;
   isToday: boolean;
   isLast: boolean;
-  legs: LegRow[];
-  activities: IdeaRow[];
+  items: DayItem[];
   note: string;
   stay: TripData["stays"][number] | undefined;
   transit: LegRow | undefined;
   allIdeas: IdeaRow[];
   onEdit: (editing: Editing) => void;
   drag: ReturnType<typeof useActivityDrag>;
-  legDrag: ReturnType<typeof useActivityDrag>;
 }) {
-  const dropping = drag.targetDay === option.day || legDrag.targetDay === option.day;
-  const activityRef = drag.dayRef(option.day);
-  const legRef = legDrag.dayRef(option.day);
+  const dropping = drag.targetDay === option.day;
+  const hasActivities = items.some((item) => item.kind === "idea");
   return (
     <section
       id={`day-${option.day}`}
-      ref={(node) => {
-        activityRef(node);
-        legRef(node);
-      }}
+      ref={drag.dayRef(option.day)}
       className={`scroll-mt-[calc(var(--safe-top)+124px)] lg:scroll-mt-[calc(var(--safe-top)+132px)] overflow-hidden rounded-card bg-elev transition-shadow duration-150 ${
         dropping ? "ring-2 ring-accent/60" : isToday ? "ring-2 ring-accent" : ""
       }`}
@@ -265,64 +273,59 @@ function DayCard({
         </button>
       </header>
 
-      {legs.length > 0 ? (
+      <div ref={drag.anchorRef(option.day)} />
+      {items.length > 0 ? (
         <ul className="separated">
-          {legs.map((leg) => (
+          {items.map((item) => (
             <li
-              key={leg.id}
+              key={item.key}
+              ref={drag.rowRef(item.key, option.day)}
               data-drag-row
               className={`flex items-center gap-1 py-1.5 pl-1 pr-2 transition-opacity duration-150 ${
-                legDrag.draggingId === leg.id ? "opacity-30" : ""
+                drag.draggingId === item.key ? "opacity-30" : ""
               }`}
             >
-              {legDrag.handle(leg.id, option.day, `${leg.origin} to ${leg.destination}`)}
-              <button
-                type="button"
-                onClick={() => onEdit({ kind: "view-leg", id: leg.id })}
-                className="flex min-w-0 flex-1 items-center py-1 text-left"
-              >
-                <LegSummary leg={leg} />
-              </button>
-              <PinLink href={legTransitHref(leg)} label={`Directions to ${leg.destination}`} />
-              <EditButton label={`Edit ${leg.origin} to ${leg.destination}`} onClick={() => onEdit({ kind: "leg", leg })} />
+              {item.kind === "leg" ? (
+                <>
+                  {drag.handle(item.key, option.day, `${item.leg.origin} to ${item.leg.destination}`)}
+                  <button
+                    type="button"
+                    onClick={() => onEdit({ kind: "view-leg", id: item.leg.id })}
+                    className="flex min-w-0 flex-1 items-center py-1 text-left"
+                  >
+                    <LegSummary leg={item.leg} />
+                  </button>
+                  <PinLink href={legTransitHref(item.leg)} label={`Directions to ${item.leg.destination}`} />
+                  <EditButton
+                    label={`Edit ${item.leg.origin} to ${item.leg.destination}`}
+                    onClick={() => onEdit({ kind: "leg", leg: item.leg })}
+                  />
+                </>
+              ) : (
+                <>
+                  {drag.handle(item.key, option.day, item.idea.name)}
+                  <button
+                    type="button"
+                    onClick={() => onEdit({ kind: "view-idea", id: item.idea.id })}
+                    className="flex min-w-0 flex-1 items-center py-1 text-left"
+                  >
+                    <IdeaSummary idea={item.idea} />
+                  </button>
+                  <PinLink href={ideaMapsHref(item.idea)} label={`Open ${item.idea.name} in Google Maps`} />
+                  <EditButton label={`Edit ${item.idea.name}`} onClick={() => onEdit({ kind: "idea", idea: item.idea })} />
+                </>
+              )}
             </li>
           ))}
         </ul>
       ) : null}
 
-      <div ref={drag.anchorRef(option.day)} />
-      {activities.length > 0 ? (
-        <ul className={`separated ${legs.length > 0 ? "border-t border-line" : ""}`}>
-          {activities.map((idea) => (
-            <li
-              key={idea.id}
-              ref={drag.rowRef(idea.id)}
-              data-drag-row
-              className={`transition-opacity duration-150 ${drag.draggingId === idea.id ? "opacity-30" : ""}`}
-            >
-              <div className="flex items-center gap-1 py-1.5 pl-1 pr-2">
-                {drag.handle(idea.id, option.day, idea.name)}
-                <button
-                  type="button"
-                  onClick={() => onEdit({ kind: "view-idea", id: idea.id })}
-                  className="flex min-w-0 flex-1 items-center py-1 text-left"
-                >
-                  <IdeaSummary idea={idea} />
-                </button>
-                <PinLink href={ideaMapsHref(idea)} label={`Open ${idea.name} in Google Maps`} />
-                <EditButton label={`Edit ${idea.name}`} onClick={() => onEdit({ kind: "idea", idea })} />
-              </div>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-
-      {activities.length === 0 && option.cities.length > 0 ? (
+      {!hasActivities && option.cities.length > 0 ? (
         <Suggestions
           day={option.day}
           cities={option.cities}
           ideas={allIdeas}
-          className={`px-4 py-2.5 ${legs.length > 0 ? "border-t border-line" : ""}`}
+          className={`px-4 py-2.5 ${items.length > 0 ? "border-t border-line" : ""}`}
         />
       ) : null}
 
