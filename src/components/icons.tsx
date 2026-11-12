@@ -1,5 +1,6 @@
 import {
   Bus,
+  Footprints,
   Car,
   Landmark,
   Moon,
@@ -33,6 +34,7 @@ export const IDEA_ICON: Record<IdeaKind, LucideIcon> = {
   ONSEN: Waves,
   EXPERIENCE: Sparkles,
   NIGHTLIFE: Moon,
+  WALK: Footprints,
 };
 
 export const TRAVEL_COLOR = "#8e8e93";

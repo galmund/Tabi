@@ -1,7 +1,7 @@
 import type { Currency, IdeaKind, Payment, Priority, TodoPhase, TravelMode } from "@/generated/prisma/enums";
 
 export const TRAVEL_MODES = ["FLIGHT", "SHINKANSEN", "TRAIN", "BUS", "FERRY", "CAR", "OTHER"] as const;
-export const IDEA_KINDS = ["SIGHT", "FOOD", "SHOPPING", "ONSEN", "EXPERIENCE", "NIGHTLIFE"] as const;
+export const IDEA_KINDS = ["SIGHT", "FOOD", "SHOPPING", "ONSEN", "EXPERIENCE", "NIGHTLIFE", "WALK"] as const;
 export const CURRENCIES = ["JPY", "ILS", "USD"] as const;
 export const PAYMENTS = ["PAID", "DEPOSIT", "PAY_LATER"] as const;
 export const PRIORITIES = ["MUST", "NICE"] as const;
@@ -29,6 +29,7 @@ export const IDEA_KIND_LABEL: Record<IdeaKind, string> = {
   ONSEN: "Onsen",
   EXPERIENCE: "Experience",
   NIGHTLIFE: "Nightlife",
+  WALK: "Walking around",
 };
 
 export const IDEA_KIND_COLOR: Record<IdeaKind, string> = {
@@ -38,6 +39,7 @@ export const IDEA_KIND_COLOR: Record<IdeaKind, string> = {
   ONSEN: "#64d2ff",
   EXPERIENCE: "#30d158",
   NIGHTLIFE: "#ff375f",
+  WALK: "#ffd60a",
 };
 
 export const PRIORITY_LABEL: Record<Priority, string> = {

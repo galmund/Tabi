@@ -29,6 +29,7 @@ enum IdeaKind {
   ONSEN
   EXPERIENCE
   NIGHTLIFE
+  WALK
 }
 
 enum Priority {
