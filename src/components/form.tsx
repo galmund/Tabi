@@ -9,7 +9,7 @@ export function FormGroup({ children }: { children: ReactNode }) {
 }
 
 export function GroupLabel({ children }: { children: ReactNode }) {
-  return <p className="mb-1.5 px-4 text-[13px] uppercase tracking-[0.02em] text-dim">{children}</p>;
+  return <p className="mb-1.5 px-4 text-[13px] uppercase tracking-[0.03em] text-dim">{children}</p>;
 }
 
 export function Section({ label, children }: { label?: ReactNode; children: ReactNode }) {
@@ -164,7 +164,7 @@ export function ToggleRow({
   defaultChecked?: boolean;
 }) {
   return (
-    <label className="flex h-12 cursor-pointer items-center justify-between gap-3 px-4">
+    <label className="group flex h-12 cursor-pointer items-center justify-between gap-3 px-4">
       <span className="text-[17px]">{label}</span>
       <input
         type="checkbox"
@@ -172,7 +172,7 @@ export function ToggleRow({
         defaultChecked={defaultChecked}
         className="peer sr-only"
       />
-      <span className="relative h-[31px] w-[51px] shrink-0 rounded-full bg-fill transition-colors peer-checked:bg-good peer-focus-visible:outline-2 peer-focus-visible:outline-accent after:absolute after:left-[2px] after:top-[2px] after:h-[27px] after:w-[27px] after:rounded-full after:bg-white after:shadow-[0_3px_8px_rgb(0_0_0/0.15)] after:transition-transform peer-checked:after:translate-x-5" />
+      <span className="relative h-[31px] w-[51px] shrink-0 rounded-full bg-fill transition-colors duration-250 peer-checked:bg-good peer-focus-visible:outline-2 peer-focus-visible:outline-accent after:absolute after:left-[2px] after:top-[2px] after:h-[27px] after:w-[27px] after:rounded-full after:bg-white after:shadow-[0_3px_8px_rgb(0_0_0/0.15)] after:transition-[translate,width] after:duration-250 after:ease-[var(--ease-out)] group-active:after:w-[33px] peer-checked:after:translate-x-5 peer-checked:group-active:after:translate-x-[14px]" />
     </label>
   );
 }
@@ -230,7 +230,7 @@ export function ChoiceChips<T extends string>({
             type="button"
             aria-pressed={active}
             onClick={() => setValue(option)}
-            className={`pressable flex h-9 items-center gap-1.5 rounded-full px-3.5 text-[15px] font-semibold transition-colors ${
+            className={`pressable flex h-9 items-center gap-1.5 rounded-full px-3.5 text-[15px] font-semibold ${
               active ? "text-white" : "bg-group text-dim"
             }`}
             style={active ? { backgroundColor: color ?? "var(--color-accent)" } : undefined}
@@ -308,17 +308,21 @@ export function DangerButton({
   children,
   onClick,
   disabled,
+  armed = false,
 }: {
   children: ReactNode;
   onClick: () => void;
   disabled?: boolean;
+  armed?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="pressable h-12 w-full rounded-[12px] bg-group text-[17px] text-bad disabled:opacity-50"
+      className={`pressable h-12 w-full rounded-[12px] text-[17px] text-bad disabled:opacity-50 ${
+        armed ? "bg-bad/15 font-semibold" : "bg-group"
+      }`}
     >
       {children}
     </button>

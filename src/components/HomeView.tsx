@@ -81,7 +81,7 @@ export function HomeView({ data, serverToday }: { data: TripData; serverToday: s
           <Link
             href="/settings"
             aria-label="Settings"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-accent active:bg-fill lg:hidden"
+            className="pressable flex h-9 w-9 items-center justify-center rounded-full text-accent active:bg-fill lg:hidden"
           >
             <Settings className="h-[22px] w-[22px]" />
           </Link>
@@ -491,7 +491,10 @@ function Stat({
   label: string;
 }) {
   return (
-    <Link href={href} className="pressable flex flex-col items-center rounded-card bg-elev px-2 py-4 text-center">
+    <Link
+      href={href}
+      className="pressable flex flex-col items-center rounded-card bg-elev px-2 py-4 text-center hover:bg-elev2"
+    >
       <span className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-accent/15 text-accent">
         {icon}
       </span>

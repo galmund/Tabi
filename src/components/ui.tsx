@@ -29,8 +29,8 @@ export function SectionHeader({
 }) {
   return (
     <div className={`mb-2.5 flex items-baseline justify-between gap-3 px-1 ${className}`}>
-      <h2 className="text-[22px] font-bold tracking-tight">{title}</h2>
-      {trailing ? <div className="shrink-0 text-[15px] text-dim">{trailing}</div> : null}
+      <h2 className="text-[22px] font-bold leading-7 tracking-[-0.02em]">{title}</h2>
+      {trailing ? <div className="tnum shrink-0 text-[15px] text-dim">{trailing}</div> : null}
     </div>
   );
 }
@@ -72,12 +72,12 @@ export function EmptyState({
   return (
     <div className="rounded-card bg-elev px-6 py-10 text-center">
       {icon ? (
-        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-fill text-dim">
+        <div className="mx-auto mb-3.5 flex h-12 w-12 items-center justify-center rounded-full bg-fill text-dim">
           {icon}
         </div>
       ) : null}
       <p className="text-[17px] font-semibold text-ink">{title}</p>
-      {hint ? <p className="mt-1 text-[15px] text-dim">{hint}</p> : null}
+      {hint ? <p className="mx-auto mt-1 max-w-[34ch] text-[15px] leading-snug text-dim">{hint}</p> : null}
       {children}
     </div>
   );

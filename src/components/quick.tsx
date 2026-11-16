@@ -22,7 +22,7 @@ export function PinLink({ href, label }: { href: string; label: string }) {
       aria-label={label}
       title="Open in Google Maps"
       onClick={(event) => event.stopPropagation()}
-      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-accent hover:bg-fill active:bg-fill"
+      className="pressable flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-accent hover:bg-fill active:bg-fill"
     >
       <MapPin className="h-[18px] w-[18px]" />
     </a>
@@ -80,16 +80,16 @@ export function CopyText({ value, children, className = "" }: { value: string; c
       onClick={copy}
       title="Copy name"
       aria-label={`Copy ${value}`}
-      className={`group inline text-left active:opacity-60 ${className}`}
+      className={`press-fade group inline text-left ${className}`}
     >
       {children}
       {copied ? (
-        <span className="ml-1.5 inline-flex translate-y-[-2px] items-center gap-0.5 rounded-full bg-good/15 px-1.5 py-0.5 align-middle text-[12px] font-semibold text-good">
+        <span className="pop-in ml-1.5 inline-flex translate-y-[-2px] items-center gap-0.5 rounded-full bg-good/15 px-1.5 py-0.5 align-middle text-[12px] font-semibold text-good">
           <Check className="h-3 w-3" />
           Copied
         </span>
       ) : (
-        <Copy className="ml-1.5 inline h-[0.7em] w-[0.7em] translate-y-[-1px] align-middle text-faint group-hover:text-dim" />
+        <Copy className="ml-1.5 inline h-[0.7em] w-[0.7em] translate-y-[-1px] align-middle text-faint transition-colors group-hover:text-dim" />
       )}
     </button>
   );
@@ -108,12 +108,14 @@ export function CopyChip({ value, prefix = "" }: { value: string; prefix?: strin
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") copy(event);
       }}
-      className={`tnum inline-flex max-w-full cursor-pointer items-center gap-1 rounded-full px-2 py-0.5 text-[14px] font-medium transition-colors active:opacity-60 ${
+      className={`pressable tnum inline-flex max-w-full cursor-pointer items-center gap-1 rounded-full px-2 py-0.5 text-[14px] font-medium ${
         copied ? "bg-good/15 text-good" : "bg-fill text-ink"
       }`}
     >
-      <span className="truncate">{copied ? "Copied" : `${prefix}${value}`}</span>
-      {copied ? <Check className="h-3.5 w-3.5 shrink-0" /> : <Copy className="h-3.5 w-3.5 shrink-0 text-dim" />}
+      <span key={copied ? "copied" : "value"} className={`truncate ${copied ? "pop-in" : ""}`}>
+        {copied ? "Copied" : `${prefix}${value}`}
+      </span>
+      {copied ? <Check className="pop-in h-3.5 w-3.5 shrink-0" /> : <Copy className="h-3.5 w-3.5 shrink-0 text-dim" />}
     </span>
   );
 }

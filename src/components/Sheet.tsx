@@ -77,7 +77,7 @@ function SheetBody({ children }: { children: ReactNode }) {
   );
 }
 
-const barButton = "px-1 text-[17px] text-accent active:opacity-50 disabled:text-faint";
+const barButton = "press-fade px-1 text-[17px] text-accent disabled:text-faint";
 
 export function FormSheet({
   title,
@@ -121,7 +121,9 @@ export function FormSheet({
         <SheetBody>
           {children}
           {state && !state.ok ? (
-            <p className="rounded-[12px] bg-bad/15 px-4 py-3 text-[15px] text-bad">{state.error}</p>
+            <p role="alert" className="rise-in rounded-[12px] bg-bad/15 px-4 py-3 text-[15px] text-bad">
+              {state.error}
+            </p>
           ) : null}
           {footer?.(dismiss)}
         </SheetBody>

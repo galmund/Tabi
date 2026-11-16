@@ -53,7 +53,7 @@ export function NavBar({ title, eyebrow, back, large = true, trailing }: NavBarP
             {back ? (
               <Link
                 href={back.href}
-                className="-ml-2 inline-flex h-11 items-center pr-2 text-[17px] text-accent active:opacity-50 lg:hidden"
+                className="press-fade -ml-2 inline-flex h-11 items-center pr-2 text-[17px] text-accent lg:hidden"
               >
                 <ChevronLeft className="h-7 w-7" strokeWidth={2.4} />
                 <span className="-ml-0.5 truncate">{back.label}</span>
@@ -75,9 +75,9 @@ export function NavBar({ title, eyebrow, back, large = true, trailing }: NavBarP
       {large ? (
         <div className="px-1 pb-5 pt-1 lg:pb-6 lg:pt-2">
           {eyebrow ? (
-            <p className="text-[13px] font-semibold uppercase tracking-[0.02em] text-dim">{eyebrow}</p>
+            <p className="tnum mb-0.5 text-[13px] font-semibold uppercase tracking-[0.04em] text-dim">{eyebrow}</p>
           ) : null}
-          <h1 className="text-[34px] font-bold leading-[41px] tracking-[-0.025em]">{title}</h1>
+          <h1 className="text-[34px] font-bold leading-[41px] tracking-[-0.025em] lg:text-[38px] lg:leading-[44px]">{title}</h1>
           <div ref={markerRef} />
         </div>
       ) : (

@@ -73,7 +73,7 @@ export function DayStrip({ days, today, missing }: { days: DayOption[]; today: s
                 setActive(option.day);
                 document.getElementById(`day-${option.day}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
               }}
-              className={`relative flex h-12 w-11 shrink-0 flex-col items-center justify-center rounded-[12px] transition-[transform,background] duration-150 active:scale-95 ${
+              className={`relative flex h-12 w-11 shrink-0 flex-col items-center justify-center rounded-[12px] transition-[scale,background-color,color] duration-150 ease-[var(--ease-out)] active:scale-95 ${
                 colors.length === 0 ? (isActive ? "bg-ink text-bg" : "bg-fill") : isActive ? "text-white" : ""
               } ${isToday ? "ring-2 ring-accent ring-offset-1 ring-offset-bg" : ""}`}
               style={colors.length > 0 ? { background: tint(colors, isActive ? "" : "33") } : undefined}

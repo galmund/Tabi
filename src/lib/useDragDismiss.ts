@@ -68,7 +68,7 @@ export function useDragDismiss({ target, onDismiss, onProgress, scaleWithDrag = 
       animation.current?.cancel();
       const run = el.animate([frames(from), frames(to)], {
         duration,
-        easing: "cubic-bezier(0.2, 0.9, 0.3, 1)",
+        easing: "cubic-bezier(0.32, 0.72, 0, 1)",
         fill: "forwards",
       });
       animation.current = run;

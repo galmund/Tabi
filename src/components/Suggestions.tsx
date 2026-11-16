@@ -69,7 +69,7 @@ export function Suggestions({
             type="button"
             onClick={() => setOpen((value) => !value)}
             aria-expanded={open}
-            className="mt-1 inline-flex items-center gap-1 rounded-full py-1 text-[15px] font-semibold text-accent active:opacity-60"
+            className="mt-1 inline-flex items-center gap-1 rounded-full py-1 text-[15px] font-semibold text-accent press-fade"
           >
             {open ? "Show fewer" : `All ${options.length} in ${cities.map((city) => city.name).join(" & ")}`}
             <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />

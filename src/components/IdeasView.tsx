@@ -190,7 +190,7 @@ export function IdeasView({ data }: { data: TripData }) {
                   <button
                     type="button"
                     onClick={() => setEditing({ kind: "new", city: group.city?.name })}
-                    className="pressable flex min-h-[132px] items-center justify-center gap-2 rounded-card border border-dashed border-line text-[15px] font-semibold text-dim transition-colors hover:border-accent/50 hover:text-accent"
+                    className="pressable flex min-h-[132px] items-center justify-center gap-2 rounded-card border border-dashed border-line text-[15px] font-semibold text-dim hover:border-accent/50 hover:text-accent"
                   >
                     <Plus className="h-[18px] w-[18px]" />
                     {group.city ? `Add to ${group.city.name}` : "Add idea"}

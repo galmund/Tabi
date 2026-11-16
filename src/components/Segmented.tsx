@@ -21,7 +21,7 @@ export function SegmentedTrack({
 }
 
 export function segmentClass(active: boolean): string {
-  return `flex h-8 items-center justify-center gap-1.5 rounded-[8px] px-3 text-[14px] font-semibold transition-[background-color,color,box-shadow] duration-200 ${
+  return `flex h-8 items-center justify-center gap-1.5 rounded-[8px] px-3 text-[14px] font-semibold transition-[background-color,color,box-shadow,scale] duration-200 ease-[var(--ease-out)] active:scale-[0.97] ${
     active
       ? "bg-thumb text-ink shadow-[var(--shadow-thumb)]"
       : "text-dim active:text-ink"

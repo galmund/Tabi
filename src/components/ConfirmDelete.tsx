@@ -27,6 +27,7 @@ export function ConfirmDelete({
     <div>
       <DangerButton
         disabled={pending}
+        armed={armed && !pending}
         onClick={() => {
           if (!armed) {
             setArmed(true);
@@ -41,7 +42,11 @@ export function ConfirmDelete({
       >
         {pending ? "Deleting…" : armed ? "Tap again to delete" : label}
       </DangerButton>
-      {error ? <p className="mt-2 px-4 text-[13px] text-bad">{error}</p> : null}
+      {error ? (
+        <p role="alert" className="rise-in mt-2 px-4 text-[13px] text-bad">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

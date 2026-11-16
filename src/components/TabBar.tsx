@@ -36,11 +36,14 @@ export function TabBar() {
                 href={tab.href}
                 prefetch
                 aria-current={active ? "page" : undefined}
-                className={`flex h-full flex-col items-center justify-center gap-[3px] text-[10px] font-medium tracking-normal transition-colors ${
+                className={`group flex h-full flex-col items-center justify-center gap-[3px] text-[10px] font-medium tracking-normal transition-colors duration-200 ${
                   active ? "text-accent" : "text-[#8e8e93] active:text-ink"
                 }`}
               >
-                <Icon className="h-[25px] w-[25px]" strokeWidth={active ? 2.3 : 1.9} />
+                <Icon
+                  className="h-[25px] w-[25px] transition-transform duration-150 ease-[var(--ease-out)] group-active:scale-90"
+                  strokeWidth={active ? 2.3 : 1.9}
+                />
                 {tab.label}
               </Link>
             </li>
@@ -74,8 +77,8 @@ export function Sidebar({ tripName }: { tripName: string }) {
                 href={item.href}
                 prefetch
                 aria-current={active ? "page" : undefined}
-                className={`flex h-8 items-center gap-2.5 rounded-[8px] px-2.5 text-[14px] font-medium transition-colors ${
-                  active ? "bg-accent/15 text-accent" : "text-ink hover:bg-fill"
+                className={`flex h-8 items-center gap-2.5 rounded-[8px] px-2.5 text-[14px] font-medium transition-[background-color,color,scale] duration-150 active:scale-[0.98] ${
+                  active ? "bg-accent/15 text-accent" : "text-ink hover:bg-fill active:bg-fill"
                 }`}
               >
                 <Icon className={`h-[18px] w-[18px] ${active ? "" : "text-accent"}`} strokeWidth={2} />

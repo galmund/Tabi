@@ -261,7 +261,7 @@ function DayCard({
           type="button"
           onClick={() => onEdit({ kind: "cities", day: option.day })}
           aria-label={`Cities on ${formatDay(option.day)}`}
-          className="flex flex-wrap justify-end gap-1 rounded-full pt-1 active:opacity-60"
+          className="flex flex-wrap justify-end gap-1 rounded-full pt-1 press-fade"
         >
           {option.cities.map((city) => (
             <CityTag key={city.id} city={city} />
@@ -606,7 +606,7 @@ function DayCitiesSheet({
                       type="button"
                       aria-pressed={active}
                       onClick={() => toggle(city.id)}
-                      className="pressable flex h-9 items-center rounded-full px-3.5 text-[15px] font-semibold transition-colors"
+                      className="pressable flex h-9 items-center rounded-full px-3.5 text-[15px] font-semibold"
                       style={{
                         color: active ? "#fff" : city.color,
                         backgroundColor: active ? city.color : `${city.color}22`,
