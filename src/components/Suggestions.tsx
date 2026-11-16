@@ -47,7 +47,7 @@ export function Suggestions({
         disabled={pending}
         onClick={() => add(idea)}
         aria-label={`Add ${idea.name} to this day`}
-        className="pressable flex h-8 shrink-0 items-center gap-1 rounded-full bg-accent/15 px-3 text-[14px] font-semibold text-accent disabled:opacity-60"
+        className="pressable flex h-8 shrink-0 items-center gap-1 rounded-full bg-accent/12 px-3 text-[14px] font-semibold text-accent disabled:opacity-60"
       >
         <Plus className="h-4 w-4" strokeWidth={2.6} />
         Add
@@ -61,7 +61,7 @@ export function Suggestions({
 
   return (
     <div className={className}>
-      <p className="text-[13px] font-semibold uppercase tracking-[0.02em] text-dim">Free day — ideas nearby</p>
+      <p className="text-[13px] font-semibold text-dim">Free day — ideas nearby</p>
       {open ? null : <ul className="mt-1">{options.slice(0, QUICK).map(row)}</ul>}
       {options.length > QUICK || groups.length > 1 ? (
         <>

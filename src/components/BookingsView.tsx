@@ -69,13 +69,13 @@ export function BookingsView({
     <>
       <NavBar
         title="Bookings"
-        eyebrow={tab === "stays" ? `${booked} booked · ${plural(stays.length - booked, "option")}` : plural(legs.length, "journey")}
+        subtitle={tab === "stays" ? `${booked} booked · ${plural(stays.length - booked, "option")}` : plural(legs.length, "journey")}
         trailing={
           <button
             type="button"
             aria-label={tab === "stays" ? "Add stay" : "Add travel"}
             onClick={() => setEditing(tab === "stays" ? { kind: "stay" } : { kind: "leg" })}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-accent active:bg-fill"
+            className="pressable flex h-9 w-9 items-center justify-center rounded-full text-accent active:bg-fill"
           >
             <Plus className="h-6 w-6" strokeWidth={2.4} />
           </button>
@@ -109,7 +109,7 @@ export function BookingsView({
             />
           ) : (
             <>
-              <GroupedList inset={20}>
+              <GroupedList inset={16 + 40 + 12}>
                 {stays.map((stay) => (
                   <StayItem
                     key={stay.id}
@@ -246,7 +246,17 @@ function StayItem({
   return (
     <li className={`${supersededBy ? "opacity-50" : ""} ${pending ? "opacity-40" : ""}`}>
       <div className="flex">
-        <span className="my-3 ml-2 w-1 shrink-0 rounded-full" style={{ backgroundColor: stay.city.color }} />
+        <span
+          aria-label={plural(nights, "night")}
+          className="relative my-3 ml-4 flex h-11 w-10 shrink-0 flex-col items-center justify-center overflow-hidden rounded-[6px]"
+          style={{ backgroundColor: `color-mix(in srgb, ${stay.city.color} 13%, var(--color-elev))` }}
+        >
+          <span aria-hidden className="absolute inset-x-0 top-0 h-[3px]" style={{ backgroundColor: stay.city.color }} />
+          <span className="num text-[16px] font-bold leading-none">{nights}</span>
+          <span className="mt-0.5 text-[9px] font-semibold uppercase leading-none tracking-[0.06em] text-dim">
+            {nights === 1 ? "night" : "nights"}
+          </span>
+        </span>
         <button
           type="button"
           onClick={onOpen}
@@ -258,7 +268,7 @@ function StayItem({
               {stay.status === "OPTION" ? <Tag>Option</Tag> : null}
             </p>
             <p className="tnum mt-0.5 text-[14px] text-dim">
-              {formatRange(stay.checkIn, stay.checkOut)} · {plural(nights, "night")} · {stay.city.name}
+              {formatRange(stay.checkIn, stay.checkOut)} · {stay.city.name}
             </p>
             {stay.status === "BOOKED" && stay.cancelBy && cancelIn !== null ? (
               <p className={`tnum mt-0.5 text-[14px] ${cancelIn < 0 ? "text-dim" : cancelIn <= 14 ? "text-orange" : "text-dim"}`}>
@@ -289,7 +299,7 @@ function StayItem({
                 })
               }
               className={`pressable h-8 rounded-full px-3 text-[14px] font-semibold ${
-                supersededBy ? "bg-bad/15 text-bad" : "bg-accent/15 text-accent"
+                supersededBy ? "bg-bad/12 text-bad hover:bg-bad/18" : "bg-accent/12 text-accent hover:bg-accent/18"
               }`}
             >
               {supersededBy ? "Remove" : "Booked it"}

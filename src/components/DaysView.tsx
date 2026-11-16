@@ -15,7 +15,7 @@ import { Suggestions } from "@/components/Suggestions";
 import { IdeaSummary, LegSummary } from "@/components/rows";
 import { FormGroup, GroupLabel } from "@/components/form";
 import { Sheet } from "@/components/Sheet";
-import { CityDot, CityTag, Tag } from "@/components/ui";
+import { CityDot, CityTag, StationMark, Tag } from "@/components/ui";
 import { addDays, daysBetween, formatDay, formatRange, plural } from "@/lib/dates";
 import { useToday } from "@/lib/device";
 import { bookedStayOn, dayOptions, nightStates, overnightLegOn, type DayOption } from "@/lib/plan";
@@ -109,10 +109,10 @@ export function DaysView({ data, serverToday }: { data: TripData; serverToday: s
 
   return (
     <>
-      <NavBar title="Days" eyebrow={`${formatRange(trip.startDate, trip.endDate)} · ${plural(days.length, "day")}`} />
+      <NavBar title="Days" subtitle={`${formatRange(trip.startDate, trip.endDate)} · ${plural(days.length, "day")}`} />
       <DayStrip days={days} today={today} missing={missingNights} />
 
-      <div className="rise-in space-y-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-5 lg:space-y-0">
+      <div className="rise-in space-y-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0 xl:grid-cols-2">
         {days.map((option) => (
           <DayCard
             key={option.day}
@@ -241,27 +241,41 @@ function DayCard({
 }) {
   const dropping = drag.targetDay === option.day;
   const hasActivities = items.some((item) => item.kind === "idea");
+  const nightColor = stay?.city.color;
   return (
     <section
       id={`day-${option.day}`}
       ref={drag.dayRef(option.day)}
-      className={`scroll-mt-[calc(var(--safe-top)+124px)] lg:scroll-mt-[calc(var(--safe-top)+132px)] overflow-hidden rounded-card bg-elev transition-shadow duration-150 ${
+      className={`card relative scroll-mt-[calc(var(--safe-top)+124px)] overflow-hidden transition-shadow duration-150 lg:scroll-mt-[calc(var(--safe-top)+132px)] ${
         dropping ? "ring-2 ring-accent/60" : isToday ? "ring-2 ring-accent" : ""
       }`}
     >
-      <header className="flex items-start justify-between gap-3 px-4 pb-2 pt-3.5">
-        <div className="min-w-0">
-          <p className="tnum text-[13px] font-semibold uppercase tracking-[0.02em] text-dim">
-            Day {option.number}
-            {isToday ? <span className="ml-1.5 text-accent">· Today</span> : null}
-          </p>
-          <h2 className="text-[20px] font-bold tracking-tight">{formatDay(option.day)}</h2>
+      {isLast ? null : nightColor ? (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-16"
+          style={{
+            background: `linear-gradient(180deg, ${nightColor} 0, ${nightColor} 3px, color-mix(in srgb, ${nightColor} 16%, transparent) 3px, transparent 100%)`,
+          }}
+        />
+      ) : transit ? (
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-elev3" />
+      ) : (
+        <div aria-hidden className="hatched-edge pointer-events-none absolute inset-x-0 top-0 h-[3px]" />
+      )}
+      <header className="relative flex items-center justify-between gap-3 px-4 pb-2.5 pt-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <StationMark number={option.number} label="day" tone={isToday ? "accent" : "ink"} />
+          <div className="min-w-0">
+            <h2 className="text-[19px] font-bold leading-6 tracking-[-0.02em]">{formatDay(option.day)}</h2>
+            {isToday ? <p className="text-[13px] font-semibold text-accent">Today</p> : null}
+          </div>
         </div>
         <button
           type="button"
           onClick={() => onEdit({ kind: "cities", day: option.day })}
           aria-label={`Cities on ${formatDay(option.day)}`}
-          className="flex flex-wrap justify-end gap-1 rounded-full pt-1 press-fade"
+          className="flex flex-wrap justify-end gap-1 rounded-full press-fade"
         >
           {option.cities.map((city) => (
             <CityTag key={city.id} city={city} />
@@ -325,17 +339,17 @@ function DayCard({
           day={option.day}
           cities={option.cities}
           ideas={allIdeas}
-          className={`px-4 py-2.5 ${items.length > 0 ? "border-t border-line" : ""}`}
+          className={`px-4 py-2.5 ${items.length > 0 ? "border-t-[0.5px] border-line" : ""}`}
         />
       ) : null}
 
       <DayNote day={option.day} initial={note} />
 
-      <div className="flex items-center gap-2 border-t border-line px-4 py-2.5">
+      <div className="flex items-center gap-2 border-t-[0.5px] border-line px-4 py-2.5">
         <button
           type="button"
           onClick={() => onEdit({ kind: "add", day: option })}
-          className="pressable flex h-8 items-center gap-1 rounded-full bg-accent/15 px-3 text-[14px] font-semibold text-accent"
+          className="pressable flex h-8 items-center gap-1 rounded-full bg-accent/12 px-3 text-[14px] font-semibold text-accent hover:bg-accent/18"
         >
           <Plus className="h-4 w-4" strokeWidth={2.6} />
           Activity
@@ -343,7 +357,7 @@ function DayCard({
         <button
           type="button"
           onClick={() => onEdit({ kind: "new-leg", day: option.day })}
-          className="pressable flex h-8 items-center gap-1 rounded-full bg-fill px-3 text-[14px] font-semibold text-accent"
+          className="pressable flex h-8 items-center gap-1 rounded-full bg-fill px-3 text-[14px] font-semibold text-accent hover:bg-accent/12"
         >
           <Plus className="h-4 w-4" strokeWidth={2.6} />
           Travel
@@ -427,7 +441,7 @@ function DayNote({ day, initial }: { day: string; initial: string }) {
       <button
         type="button"
         onClick={() => setEditing(true)}
-        className="flex w-full items-center gap-2 border-t border-line px-4 py-2.5 text-left text-[15px] text-faint active:bg-fill"
+        className="flex w-full items-center gap-2 border-t border-line px-4 py-2.5 text-left text-[15px] text-placeholder active:bg-fill"
       >
         <StickyNote className="h-4 w-4" />
         Add a note
@@ -515,7 +529,7 @@ function AddActivitySheet({
               close();
               onNew();
             }}
-            className="pressable flex h-12 w-full items-center gap-3 rounded-[12px] bg-group px-4 text-[17px] font-medium text-accent"
+            className="pressable flex h-12 w-full items-center gap-3 rounded-[12px] bg-group shadow-[var(--shadow-card)] px-4 text-[17px] font-medium text-accent"
           >
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-on-accent">
               <Plus className="h-4 w-4" strokeWidth={2.8} />
@@ -642,7 +656,7 @@ function DayCitiesSheet({
                   type="button"
                   onClick={add}
                   disabled={pending || !name.trim()}
-                  className="shrink-0 px-2 text-[17px] font-semibold text-accent disabled:text-faint"
+                  className="shrink-0 px-2 text-[17px] font-semibold text-accent disabled:text-placeholder"
                 >
                   Add
                 </button>

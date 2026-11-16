@@ -1,0 +1,783 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-16T22:23:59.617864+00:00",
+  "title": "Design System: Tabi",
+  "extensions": {
+    "colorMeta": {
+      "prussian-sky": {
+        "role": "primary",
+        "displayName": "Prussian Sky",
+        "canonical": "#1d3d63",
+        "tonalRamp": [
+          "#182535",
+          "#253d5b",
+          "#305888",
+          "#3975bc",
+          "#6695cc",
+          "#98b5d7",
+          "#c7d5e6",
+          "#eef2f6"
+        ],
+        "cssVar": "--color-sky"
+      },
+      "prussian-deep": {
+        "role": "primary",
+        "displayName": "Prussian Deep",
+        "canonical": "#12294a",
+        "tonalRamp": [
+          "#162336",
+          "#223a5e",
+          "#2b538d",
+          "#316dc4",
+          "#618fd1",
+          "#95b1da",
+          "#c5d3e7",
+          "#eef1f7"
+        ],
+        "cssVar": "--color-sky-deep"
+      },
+      "prussian-ink": {
+        "role": "primary",
+        "displayName": "Prussian Ink",
+        "canonical": "#1f4f86",
+        "tonalRamp": [
+          "#162537",
+          "#213e5f",
+          "#2a588e",
+          "#2f75c5",
+          "#5f95d3",
+          "#94b5db",
+          "#c5d5e8",
+          "#eef2f7"
+        ],
+        "cssVar": "--color-accent"
+      },
+      "fog": {
+        "role": "neutral",
+        "displayName": "Fog",
+        "canonical": "#eceff2",
+        "tonalRamp": [
+          "#21262b",
+          "#364049",
+          "#4d5c6b",
+          "#647a91",
+          "#8899aa",
+          "#adb8c2",
+          "#d1d6dc",
+          "#f1f2f4"
+        ],
+        "cssVar": "--color-bg"
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#262626",
+          "#404040",
+          "#5c5c5c",
+          "#7a7a7a",
+          "#999999",
+          "#b8b8b8",
+          "#d6d6d6",
+          "#f2f2f2"
+        ],
+        "cssVar": "--color-elev"
+      },
+      "paper-recess": {
+        "role": "neutral",
+        "displayName": "Paper Recess",
+        "canonical": "#e2e6eb",
+        "tonalRamp": [
+          "#21262b",
+          "#373f49",
+          "#4d5a6b",
+          "#647890",
+          "#8897aa",
+          "#adb6c2",
+          "#d1d6db",
+          "#f1f2f4"
+        ]
+      },
+      "paper-rule": {
+        "role": "neutral",
+        "displayName": "Paper Rule",
+        "canonical": "#c9d0d9",
+        "tonalRamp": [
+          "#22262b",
+          "#373f48",
+          "#4e5a6a",
+          "#65788f",
+          "#8997a9",
+          "#aeb6c2",
+          "#d1d6db",
+          "#f1f2f4"
+        ]
+      },
+      "sumi": {
+        "role": "neutral",
+        "displayName": "Sumi",
+        "canonical": "#111d2b",
+        "tonalRamp": [
+          "#1b2532",
+          "#2a3e55",
+          "#39597f",
+          "#4676ae",
+          "#7196c1",
+          "#9fb6d0",
+          "#cad5e2",
+          "#eff2f6"
+        ],
+        "cssVar": "--color-ink"
+      },
+      "sumi-dim": {
+        "role": "neutral",
+        "displayName": "Sumi Dim",
+        "canonical": "#54606f",
+        "tonalRamp": [
+          "#23262a",
+          "#393f47",
+          "#515b67",
+          "#6a798b",
+          "#8c98a6",
+          "#b0b7c0",
+          "#d2d6da",
+          "#f1f2f3"
+        ],
+        "cssVar": "--color-dim"
+      },
+      "vermilion": {
+        "role": "tertiary",
+        "displayName": "Vermilion (unprinted)",
+        "canonical": "#c03a24",
+        "tonalRamp": [
+          "#381914",
+          "#62271e",
+          "#933425",
+          "#cd3f28",
+          "#d96b59",
+          "#df9b90",
+          "#eac8c3",
+          "#f7efed"
+        ],
+        "cssVar": "--color-bad"
+      },
+      "ochre": {
+        "role": "tertiary",
+        "displayName": "Ochre (due soon)",
+        "canonical": "#9a5f0c",
+        "tonalRamp": [
+          "#3d2a10",
+          "#6a4715",
+          "#a06717",
+          "#e18c14",
+          "#e8a64a",
+          "#e9c087",
+          "#eedabe",
+          "#f9f3ec"
+        ],
+        "cssVar": "--color-orange"
+      },
+      "pine": {
+        "role": "tertiary",
+        "displayName": "Pine (done)",
+        "canonical": "#2a7650",
+        "tonalRamp": [
+          "#1a3326",
+          "#285740",
+          "#36825c",
+          "#41b37a",
+          "#6dc599",
+          "#9cd3b8",
+          "#c9e4d6",
+          "#eff6f2"
+        ],
+        "cssVar": "--color-good"
+      },
+      "night-ground": {
+        "role": "neutral",
+        "displayName": "Night Prussian Ground",
+        "canonical": "#0a1626",
+        "tonalRamp": [
+          "#172436",
+          "#233c5d",
+          "#2d558b",
+          "#3470c1",
+          "#6391cf",
+          "#96b3d9",
+          "#c6d4e7",
+          "#eef2f7"
+        ]
+      },
+      "night-paper": {
+        "role": "neutral",
+        "displayName": "Night Paper",
+        "canonical": "#112035",
+        "tonalRamp": [
+          "#192434",
+          "#263c59",
+          "#335585",
+          "#3d70b8",
+          "#6991c9",
+          "#9ab3d5",
+          "#c8d4e5",
+          "#eef2f6"
+        ]
+      },
+      "night-paper-raised": {
+        "role": "neutral",
+        "displayName": "Night Paper Raised",
+        "canonical": "#1a2b43",
+        "tonalRamp": [
+          "#1b2432",
+          "#2a3c56",
+          "#38567f",
+          "#4571af",
+          "#7092c2",
+          "#9eb3d1",
+          "#cad4e3",
+          "#eff2f6"
+        ]
+      },
+      "night-sky": {
+        "role": "primary",
+        "displayName": "Night Sky",
+        "canonical": "#17385e",
+        "tonalRamp": [
+          "#162536",
+          "#223e5e",
+          "#2b588c",
+          "#3175c3",
+          "#6195d1",
+          "#95b5da",
+          "#c5d5e7",
+          "#eef2f7"
+        ]
+      },
+      "night-sky-deep": {
+        "role": "primary",
+        "displayName": "Night Sky Deep",
+        "canonical": "#0f2744",
+        "tonalRamp": [
+          "#162537",
+          "#203d5f",
+          "#29578f",
+          "#2e73c7",
+          "#5e93d4",
+          "#93b4dc",
+          "#c4d4e8",
+          "#edf2f7"
+        ]
+      },
+      "night-prussian-ink": {
+        "role": "primary",
+        "displayName": "Night Prussian Ink",
+        "canonical": "#8db8ea",
+        "tonalRamp": [
+          "#142538",
+          "#1e3d62",
+          "#255893",
+          "#2874cd",
+          "#5994d9",
+          "#90b5df",
+          "#c3d5ea",
+          "#edf2f7"
+        ]
+      },
+      "night-ink": {
+        "role": "neutral",
+        "displayName": "Night Ink",
+        "canonical": "#e9eef5",
+        "tonalRamp": [
+          "#1c2530",
+          "#2d3d52",
+          "#3e577a",
+          "#4d73a7",
+          "#7693bc",
+          "#a2b4cd",
+          "#ccd4e1",
+          "#eff2f5"
+        ]
+      },
+      "night-vermilion": {
+        "role": "tertiary",
+        "displayName": "Night Vermilion",
+        "canonical": "#ff6a52",
+        "tonalRamp": [
+          "#40130c",
+          "#711c0e",
+          "#ac220c",
+          "#f32402",
+          "#f6563c",
+          "#f18e7e",
+          "#f3c2ba",
+          "#faedeb"
+        ]
+      },
+      "night-ochre": {
+        "role": "tertiary",
+        "displayName": "Night Ochre",
+        "canonical": "#e9ac45",
+        "tonalRamp": [
+          "#3b2c12",
+          "#674a19",
+          "#9b6c1d",
+          "#d9931c",
+          "#e2ac50",
+          "#e5c38a",
+          "#eddcc0",
+          "#f8f4ec"
+        ]
+      },
+      "night-pine": {
+        "role": "tertiary",
+        "displayName": "Night Pine",
+        "canonical": "#5ec28c",
+        "tonalRamp": [
+          "#1a3225",
+          "#29563e",
+          "#388059",
+          "#44b176",
+          "#6fc396",
+          "#9ed1b6",
+          "#c9e3d5",
+          "#eff6f2"
+        ]
+      },
+      "city-teal": {
+        "role": "secondary",
+        "displayName": "City Teal",
+        "canonical": "#2a93a6",
+        "tonalRamp": [
+          "#173136",
+          "#22545d",
+          "#2c7d8c",
+          "#33acc2",
+          "#62bfd0",
+          "#95cfda",
+          "#c5e2e7",
+          "#eef5f7"
+        ]
+      },
+      "city-plum": {
+        "role": "secondary",
+        "displayName": "City Plum",
+        "canonical": "#8e3b8f",
+        "tonalRamp": [
+          "#311b31",
+          "#542b54",
+          "#7c3a7d",
+          "#ab48ac",
+          "#bf72c0",
+          "#cfa0cf",
+          "#e2cae2",
+          "#f5eff5"
+        ]
+      },
+      "city-moss": {
+        "role": "secondary",
+        "displayName": "City Moss",
+        "canonical": "#3c8d6e",
+        "tonalRamp": [
+          "#1c3129",
+          "#2c5444",
+          "#3b7c63",
+          "#4aab86",
+          "#74bea2",
+          "#a1cfbd",
+          "#cbe2d9",
+          "#eff5f3"
+        ]
+      },
+      "city-persimmon": {
+        "role": "secondary",
+        "displayName": "City Persimmon",
+        "canonical": "#d9822b",
+        "tonalRamp": [
+          "#382614",
+          "#62401d",
+          "#945c24",
+          "#ce7a27",
+          "#da9958",
+          "#dfb890",
+          "#ead6c2",
+          "#f8f2ed"
+        ]
+      },
+      "city-wisteria": {
+        "role": "secondary",
+        "displayName": "City Wisteria",
+        "canonical": "#6a5fb0",
+        "tonalRamp": [
+          "#201d2f",
+          "#342f50",
+          "#484177",
+          "#5d52a3",
+          "#827ab8",
+          "#a9a4cb",
+          "#cfcde0",
+          "#f0f0f5"
+        ]
+      },
+      "city-azalea": {
+        "role": "secondary",
+        "displayName": "City Azalea",
+        "canonical": "#c4476a",
+        "tonalRamp": [
+          "#341920",
+          "#592635",
+          "#85334a",
+          "#b83d5f",
+          "#c96984",
+          "#d59aab",
+          "#e5c8d0",
+          "#f6eef1"
+        ]
+      },
+      "city-indigo": {
+        "role": "secondary",
+        "displayName": "City Indigo",
+        "canonical": "#2f6db5",
+        "tonalRamp": [
+          "#172536",
+          "#233e5d",
+          "#2d588b",
+          "#3475c1",
+          "#6295d0",
+          "#96b5d9",
+          "#c6d5e7",
+          "#eef2f7"
+        ]
+      },
+      "city-chestnut": {
+        "role": "secondary",
+        "displayName": "City Chestnut",
+        "canonical": "#8c6239",
+        "tonalRamp": [
+          "#31261b",
+          "#553f2b",
+          "#7e5b3a",
+          "#ad7a48",
+          "#c09972",
+          "#d0b79f",
+          "#e2d6ca",
+          "#f5f2ef"
+        ]
+      },
+      "city-mustard": {
+        "role": "secondary",
+        "displayName": "City Mustard",
+        "canonical": "#c99a1a",
+        "tonalRamp": [
+          "#3a3012",
+          "#66511a",
+          "#9a781e",
+          "#d7a51e",
+          "#e1ba51",
+          "#e4cc8b",
+          "#ece0c0",
+          "#f8f5ec"
+        ]
+      },
+      "city-celadon": {
+        "role": "secondary",
+        "displayName": "City Celadon",
+        "canonical": "#4f9f8f",
+        "tonalRamp": [
+          "#1d2f2c",
+          "#2f504a",
+          "#41776c",
+          "#52a393",
+          "#7ab8ac",
+          "#a4cbc3",
+          "#cde0dc",
+          "#f0f5f4"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "countdown": {
+        "displayName": "Countdown",
+        "purpose": "Days-to-go figure in the Home sky; 76px on desktop. One per screen."
+      },
+      "display": {
+        "displayName": "Display",
+        "purpose": "Page title on the Prussian sky; subtitle sits beneath. 40px/46px on desktop."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section headers on the fog, optional tabular trailing count."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Row titles, sheet titles, collapsed bar title, button labels."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Secondary row text, hints, notes; form rows use 17px."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Tags, city tags, route-strip dates."
+      },
+      "station-number": {
+        "displayName": "Station Number",
+        "purpose": "Numbers in cartouches and day/night tiles, over a 9-10px uppercase unit."
+      },
+      "japanese": {
+        "displayName": "Mincho",
+        "purpose": "Japanese place names and the 旅 mark only."
+      }
+    },
+    "shadows": [
+      {
+        "name": "card-edge",
+        "value": "0 0 0 0.5px rgb(19 32 47 / 0.08), 0 1px 2px rgb(19 32 47 / 0.05), 0 6px 16px -10px rgb(19 32 47 / 0.12)",
+        "night": "inset 0 0.5px 0 rgb(255 255 255 / 0.05), 0 0 0 0.5px rgb(150 178 212 / 0.12)",
+        "purpose": "Every card, grouped list and resting day tile."
+      },
+      {
+        "name": "thumb",
+        "value": "0 2px 6px rgb(17 34 58 / 0.12), 0 0 0 0.5px rgb(17 34 58 / 0.06)",
+        "night": "0 2px 6px rgb(0 0 0 / 0.35), inset 0 0.5px 0 rgb(255 255 255 / 0.08)",
+        "purpose": "Segmented thumb and active day tile."
+      },
+      {
+        "name": "lift",
+        "value": "0 0 0 0.5px rgb(19 32 47 / 0.1), 0 28px 64px -16px rgb(17 34 58 / 0.32)",
+        "night": "0 0 0 0.5px rgb(150 178 212 / 0.14), 0 28px 64px -12px rgb(0 0 0 / 0.7)",
+        "purpose": "Desktop modal sheet only."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "purpose": "Press scale, entrances, desktop modal, header title swap."
+      },
+      {
+        "name": "ease-in-out",
+        "value": "cubic-bezier(0.77, 0, 0.175, 1)",
+        "purpose": "On-screen movement between positions."
+      },
+      {
+        "name": "ease-drawer",
+        "value": "cubic-bezier(0.32, 0.72, 0, 1)",
+        "purpose": "Mobile bottom sheet."
+      },
+      {
+        "name": "press-scale",
+        "value": "scale(0.97) over 160ms ease-out",
+        "purpose": "Every pressable control."
+      },
+      {
+        "name": "press-fade",
+        "value": "opacity 0.5 instantly, recover over 200ms",
+        "purpose": "Bar text buttons and back links."
+      },
+      {
+        "name": "row-highlight",
+        "value": "fill instantly on press, fade out over 220ms",
+        "purpose": "Grouped-list rows."
+      },
+      {
+        "name": "sheet-mobile",
+        "value": "open 420ms ease-drawer, close 260ms",
+        "purpose": "Bottom sheet translateY; backdrop dims and blurs 6px, tracking drag."
+      },
+      {
+        "name": "sheet-desktop",
+        "value": "open 240ms ease-out from scale(0.96), close 160ms",
+        "purpose": "Centred modal sheet."
+      },
+      {
+        "name": "rise-in",
+        "value": "280ms ease-out, from translateY(6px) and opacity 0",
+        "purpose": "Page content and inline alerts entering."
+      },
+      {
+        "name": "pop-in",
+        "value": "180ms ease-out, from scale(0.9)",
+        "purpose": "Checkmarks and small confirmations."
+      },
+      {
+        "name": "header-collapse",
+        "value": "200ms opacity",
+        "purpose": "Solid Prussian bar fading in once the large title scrolls under it."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "fade-in 160ms; sheets fade 200ms without transform",
+        "purpose": "prefers-reduced-motion replacement."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "phone",
+        "value": "0-1023px",
+        "note": "32rem column, 16px gutters, bottom tab bar, 44px header"
+      },
+      {
+        "name": "desktop",
+        "value": "1024px",
+        "note": "240px Prussian rail, 64rem two-column area, 32px gutters, 52px header"
+      }
+    ],
+    "themes": {
+      "default": "night (the @theme values); day values apply under prefers-color-scheme: light or data-theme=light",
+      "onSky": "inside the sky and rail, ink becomes white, dim white 74%, accent white, fill and line white at 14-16%"
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Full-width confirm action in sheets and forms.",
+      "html": "<button class=\"ds-btn-primary\">Save stay</button>",
+      "css": ".ds-btn-primary{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,Helvetica,Arial,sans-serif;display:flex;align-items:center;justify-content:center;width:100%;height:48px;border:0;border-radius:12px;background:var(--color-accent,#1f4f86);color:var(--color-on-accent,#fff);font-size:17px;font-weight:600;letter-spacing:-0.011em;transition:transform 160ms cubic-bezier(0.23,1,0.32,1),background-color 180ms ease;cursor:pointer}.ds-btn-primary:hover{background:color-mix(in srgb,var(--color-accent,#1f4f86) 88%,#000)}.ds-btn-primary:active{transform:scale(0.97)}.ds-btn-primary:focus-visible{outline:2px solid var(--color-accent,#1f4f86);outline-offset:2px}"
+    },
+    {
+      "name": "Tinted Button",
+      "kind": "button",
+      "refersTo": "button-tinted",
+      "description": "Secondary action with leading icon, such as map links or Add stay.",
+      "html": "<a class=\"ds-btn-tinted\" href=\"#\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z\"/><path d=\"M15 5.764v15\"/><path d=\"M9 3.236v15\"/></svg>Google Maps</a>",
+      "css": ".ds-btn-tinted{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,Helvetica,Arial,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:6px;height:44px;padding:0 18px;border-radius:11px;background:rgb(30 61 99 / 0.075);color:var(--color-accent,#1f4f86);font-size:15px;font-weight:600;text-decoration:none;transition:transform 160ms cubic-bezier(0.23,1,0.32,1),background-color 180ms ease}.ds-btn-tinted:hover{background:color-mix(in srgb,var(--color-accent,#1f4f86) 12%,transparent)}.ds-btn-tinted:active{transform:scale(0.97)}.ds-btn-tinted:focus-visible{outline:2px solid var(--color-accent,#1f4f86);outline-offset:2px}"
+    },
+    {
+      "name": "Station Cartouche",
+      "kind": "custom",
+      "refersTo": "station-cartouche",
+      "description": "Double-ruled day mark; ink for days, accent for today, vermilion for a night with no bed.",
+      "html": "<div class=\"ds-row\"><span class=\"ds-cart\"><b>5</b><i>day</i></span><span class=\"ds-cart ds-cart-bad\"><b>13</b><i>day</i></span><span class=\"ds-cart ds-cart-today\"><b>2</b><i>day</i></span></div>",
+      "css": ".ds-row{display:flex;gap:16px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,Helvetica,Arial,sans-serif;}.ds-cart{margin:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;width:38px;height:44px;border:1px solid currentColor;outline:1px solid currentColor;outline-offset:2px;border-radius:2px;color:var(--color-ink,#111d2b)}.ds-cart b{font-size:17px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-0.03em}.ds-cart i{font-style:normal;margin-top:3px;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;opacity:0.7;line-height:1}.ds-cart-bad{color:var(--color-bad,#c03a24)}.ds-cart-today{color:var(--color-accent,#1f4f86)}"
+    },
+    {
+      "name": "Route Strip",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "One tile per night: city pigment fading by bokashi, neutral for transit, hatched vermilion when unprinted.",
+      "html": "<div class=\"ds-route\"><span style=\"--c:#2a93a6\"></span><span style=\"--c:#2a93a6\"></span><span style=\"--c:#2a93a6\"></span><span class=\"ds-miss\"></span><span style=\"--c:#8e3b8f\"></span><span style=\"--c:#8e3b8f\"></span><span class=\"ds-transit\"></span><span style=\"--c:#3c8d6e\"></span><span class=\"ds-miss\"></span><span class=\"ds-miss\"></span><span class=\"ds-miss\"></span></div>",
+      "css": ".ds-route{display:flex;gap:2px;height:32px;width:280px}.ds-route span{flex:1;border-radius:3px;background:linear-gradient(180deg,var(--c) 0,var(--c) 36%,color-mix(in srgb,var(--c) 34%,#fff) 100%)}.ds-route .ds-transit{background:#c9d0d9}.ds-route .ds-miss{opacity:0.8;background:repeating-linear-gradient(-45deg,#c03a24 0 3px,color-mix(in srgb,#c03a24 30%,transparent) 3px 6px)}"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "White hairline-edged sheet on the fog.",
+      "html": "<div class=\"ds-card\"><p class=\"ds-card-t\">Night of Mon 27 Sep</p><p class=\"ds-card-b\">1 night without a bed</p></div>",
+      "css": ".ds-card{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,Helvetica,Arial,sans-serif;width:300px;padding:16px;border-radius:14px;background:var(--color-elev,#fff);box-shadow:0 0 0 0.5px rgb(19 32 47 / 0.08),0 1px 2px rgb(19 32 47 / 0.05),0 6px 16px -10px rgb(19 32 47 / 0.12)}.ds-card-t{margin:0;font-size:17px;font-weight:600;color:var(--color-ink,#111d2b)}.ds-card-b{margin:2px 0 0;font-size:15px;color:var(--color-dim,#54606f)}"
+    },
+    {
+      "name": "Tags",
+      "kind": "chip",
+      "refersTo": "tag",
+      "description": "Status pill and city tag with mincho name.",
+      "html": "<div class=\"ds-tags\"><span class=\"ds-tag ds-tag-bad\">Overdue</span><span class=\"ds-tag ds-tag-ochre\">Due soon</span><span class=\"ds-tag ds-tag-good\">Booked</span><span class=\"ds-tag ds-city\">Kyoto <span class=\"ds-jp\">京都</span></span></div>",
+      "css": ".ds-tags{display:flex;gap:6px;flex-wrap:wrap;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,Helvetica,Arial,sans-serif;}.ds-tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600}.ds-tag-bad{background:rgb(192 58 36 / 0.15);color:#c03a24}.ds-tag-ochre{background:rgb(154 95 12 / 0.15);color:#9a5f0c}.ds-tag-good{background:rgb(42 118 80 / 0.15);color:#2a7650}.ds-city{background:#8e3b8f24;color:color-mix(in srgb,#8e3b8f 55%,#111d2b)}.ds-jp{font-family:'Hiragino Mincho ProN','Yu Mincho','Noto Serif JP',serif;letter-spacing:0.02em;font-weight:500;opacity:0.8}"
+    },
+    {
+      "name": "Day Tile Strip",
+      "kind": "nav",
+      "refersTo": "day-tile",
+      "description": "Horizontal day picker with city bands, active fill and today ring.",
+      "html": "<div class=\"ds-days\"><button class=\"ds-day\" style=\"--c:#2a93a6\"><i>D1</i><b>23</b></button><button class=\"ds-day ds-on\" style=\"--c:#2a93a6\"><i>D2</i><b>24</b></button><button class=\"ds-day ds-today\" style=\"--c:#8e3b8f\"><i>D3</i><b>25</b></button><button class=\"ds-day\"><i>D4</i><b>26</b><s></s></button></div>",
+      "css": ".ds-days{display:flex;gap:8px;padding:6px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,Helvetica,Arial,sans-serif;}.ds-day{position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;width:44px;height:48px;border:0;border-radius:8px;background:var(--color-elev,#fff);color:var(--color-ink,#111d2b);box-shadow:0 0 0 0.5px rgb(19 32 47 / 0.08),0 1px 2px rgb(19 32 47 / 0.05);transition:transform 150ms cubic-bezier(0.23,1,0.32,1),background-color 150ms ease;cursor:pointer}.ds-day::before{content:'';position:absolute;inset:0 0 auto;height:3px;background:var(--c,transparent)}.ds-day i{font-style:normal;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:var(--color-dim,#54606f);line-height:1}.ds-day b{margin-top:4px;font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}.ds-day s{position:absolute;bottom:4px;width:4px;height:4px;border-radius:50%;background:#c03a24}.ds-day:hover{background:#e2e6eb}.ds-day:active{transform:scale(0.95)}.ds-on{background:var(--color-accent,#1f4f86);color:#fff}.ds-on i{color:inherit;opacity:0.75}.ds-on:hover{background:var(--color-accent,#1f4f86)}.ds-today{box-shadow:0 0 0 2px #eceff2,0 0 0 4px var(--color-accent,#1f4f86)}.ds-day:focus-visible{outline:2px solid var(--color-accent,#1f4f86);outline-offset:2px}"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "nav",
+      "refersTo": "segmented-thumb",
+      "description": "Fill track with a paper thumb.",
+      "html": "<div class=\"ds-seg\"><button class=\"ds-seg-on\">Before</button><button>During</button><button>After</button></div>",
+      "css": ".ds-seg{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,Helvetica,Arial,sans-serif;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:2px;width:300px;padding:2px;border-radius:10px;background:rgb(30 61 99 / 0.075)}.ds-seg button{height:32px;border:0;border-radius:8px;background:transparent;color:var(--color-dim,#54606f);font-size:14px;font-weight:600;transition:background-color 200ms cubic-bezier(0.23,1,0.32,1),transform 200ms cubic-bezier(0.23,1,0.32,1);cursor:pointer}.ds-seg button:hover{color:var(--color-ink,#111d2b)}.ds-seg button:active{transform:scale(0.97)}.ds-seg .ds-seg-on{background:#fff;color:var(--color-ink,#111d2b);box-shadow:0 2px 6px rgb(17 34 58 / 0.12),0 0 0 0.5px rgb(17 34 58 / 0.06)}.ds-seg button:focus-visible{outline:2px solid var(--color-accent,#1f4f86);outline-offset:2px}"
+    },
+    {
+      "name": "Sky Header",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Prussian sky band with title, subtitle beneath and countdown, fading by bokashi into fog.",
+      "html": "<div class=\"ds-sky\"><h1>Japan 2027</h1><p class=\"ds-sub\">23 Sep – 26 Oct · 33 nights</p><div class=\"ds-cd\"><b>310</b><span>days to go<br>22 nights still empty</span></div></div>",
+      "css": ".ds-sky{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,Helvetica,Arial,sans-serif;width:340px;padding:20px 20px 56px;color:#fff;background:linear-gradient(180deg,#12294a 0,#1d3d63 55%,#1d3d63 calc(100% - 46px),color-mix(in srgb,#1d3d63 50%,#eceff2) calc(100% - 22px),#eceff2 100%)}.ds-sky h1{margin:0;font-size:34px;line-height:40px;font-weight:700;letter-spacing:-0.03em}.ds-sub{margin:4px 0 0;font-size:15px;font-weight:500;color:rgb(226 236 248 / 0.74);font-variant-numeric:tabular-nums}.ds-cd{margin-top:24px;display:flex;align-items:flex-end;gap:16px}.ds-cd b{font-size:64px;line-height:0.82;font-weight:700;letter-spacing:-0.05em;font-variant-numeric:tabular-nums}.ds-cd span{font-size:15px;font-weight:500;color:rgb(226 236 248 / 0.74)}"
+    },
+    {
+      "name": "Desktop Rail",
+      "kind": "nav",
+      "refersTo": "sidebar-rail",
+      "description": "Prussian left rail with white-pane active item.",
+      "html": "<nav class=\"ds-rail\"><p class=\"ds-brand\">Tabi <span>旅</span></p><a class=\"ds-on\" href=\"#\">Home</a><a href=\"#\">Days</a><a href=\"#\">Bookings</a><a href=\"#\">Ideas</a></nav>",
+      "css": ".ds-rail{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,Helvetica,Arial,sans-serif;display:flex;flex-direction:column;gap:2px;width:240px;padding:24px 12px;background:#12294a;color:#fff}.ds-brand{margin:0 8px 20px;font-size:16px;font-weight:600}.ds-brand span{font-family:'Hiragino Mincho ProN','Yu Mincho','Noto Serif JP',serif;font-size:13px;font-weight:400;color:rgb(226 236 248 / 0.74)}.ds-rail a{display:flex;align-items:center;height:36px;padding:0 12px;border-radius:9px;font-size:14px;font-weight:500;color:rgb(226 236 248 / 0.74);text-decoration:none;transition:background-color 150ms ease,color 150ms ease}.ds-rail a:hover{background:rgb(255 255 255 / 0.07);color:#fff}.ds-rail a.ds-on{background:rgb(255 255 255 / 0.14);color:#fff;box-shadow:inset 0 0.5px 0 rgb(255 255 255 / 0.12)}.ds-rail a:focus-visible{outline:2px solid #fff;outline-offset:2px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Tōkaidō Stations",
+    "overview": "The trip is a print series. Each day is a numbered station, each night takes the colour of the city it is slept in, and a night with no bed is left unprinted: hatched in vermilion so it reads as an alarm. Prussian blue owns the shell: a solid sky band behind every page title fades by bokashi into a cool fog ground, and the same Prussian runs down the desktop rail. Work happens on white hairline-edged sheets on the fog.\n\nDense and practical, in the register of a well-made phone utility. Latin in the platform sans with tabular numerals; Japanese names in mincho. Colour does two jobs only: city identity as flat pigment fields, and status (vermilion, ochre, pine).\n\nDark mode is the same print at night: night Prussian ground, raised Prussian panes, brighter status pigments.",
+    "keyCharacteristics": [
+      "Solid Prussian sky header with a bokashi fade into the fog ground",
+      "Station cartouche as the identity mark for a day",
+      "Per-night route strip of city-tinted tiles with hatched vermilion for unprinted nights",
+      "White hairline-edged sheets on fog; lift only for modals",
+      "Tabular numerals everywhere; mincho only for Japanese"
+    ],
+    "rules": [
+      {
+        "name": "The Unprinted Night Rule",
+        "body": "Vermilion is the colour of a missing bed: hatching on route tiles, the tone of the cartouche leading a no-hotel row, overdue and destructive states. Never decoration.",
+        "section": "colors"
+      },
+      {
+        "name": "The Pigment Field Rule",
+        "body": "One pigment per city, as a flat field, dot, 3px band or light tint; never full-strength text, never chrome.",
+        "section": "colors"
+      },
+      {
+        "name": "The Shell Is Prussian Rule",
+        "body": "Header sky, collapsed bar, desktop rail, theme colour and icon are Prussian; content surfaces never take the sky colour.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Rule",
+        "body": "Every count, date, night total, price and countdown uses tabular numerals.",
+        "section": "typography"
+      },
+      {
+        "name": "The Mincho Caption Rule",
+        "body": "Japanese text is set in mincho at lower emphasis than the Latin beside it; Latin is never mincho.",
+        "section": "typography"
+      },
+      {
+        "name": "The Sky Then Fog Rule",
+        "body": "Page titles sit on the Prussian sky; working content sits on the fog; nothing interactive straddles the fade.",
+        "section": "layout"
+      },
+      {
+        "name": "The Flat Sheet Rule",
+        "body": "Surfaces are flat at rest. Lift belongs to modal surfaces, not importance.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Square Print Rule",
+        "body": "Cartouche, route tile, city dot and legend swatch keep corners of 3px or less; day and night tiles and controls follow the softer tool family.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "Do put every page title on the Prussian sky with its subtitle directly underneath, and start working content on the fog below the bokashi fade.",
+      "Do mark a night with no bed in vermilion hatching on the route strip and a vermilion cartouche in lists; keep vermilion for that, overdue and destructive states.",
+      "Do colour cities only from the ten pigments, as flat fields, dots, 3px bands or light tints.",
+      "Do use tabular numerals for every count, date, price and countdown.",
+      "Do set Japanese names in mincho and Latin in the platform sans.",
+      "Do keep press feedback consistent: scale 0.97 on the ease-out curve for controls, instant highlight with a 220ms fade for list rows, opacity fade for bar text buttons.",
+      "Do honour reduced motion, reduced transparency and increased contrast."
+    ],
+    "donts": [
+      "Don't reintroduce the old iOS grouped-list skin with saturated system colours or a vermilion glow.",
+      "Don't use the cartouche or the bokashi band outside day identity, the header sky and the route strip.",
+      "Don't put a small uppercase kicker or eyebrow above a title; subtitles go beneath.",
+      "Don't add shadows to show importance; lift is for modal surfaces only.",
+      "Don't round the printed marks (cartouche, route tile, city dot) beyond 3px.",
+      "Don't add a second accent; Prussian Ink is the only interactive colour."
+    ]
+  }
+}

@@ -68,7 +68,7 @@ function Picker({
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="pressable flex aspect-square flex-col items-center justify-center gap-1 rounded-[12px] bg-group text-[12px] font-semibold text-accent"
+          className="pressable flex aspect-square flex-col items-center justify-center gap-1 rounded-[12px] bg-group shadow-[var(--shadow-card)] text-[12px] font-semibold text-accent"
         >
           <ImagePlus className="h-6 w-6" />
           Add
@@ -81,7 +81,7 @@ function Picker({
 
 function LocalTile({ item, busy, onRemove }: { item: Local; busy: boolean; onRemove?: () => void }) {
   return (
-    <span className="relative aspect-square overflow-hidden rounded-[12px] bg-group">
+    <span className="relative aspect-square overflow-hidden rounded-[12px] bg-group shadow-[var(--shadow-card)]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={item.preview} alt="" className={`h-full w-full object-cover ${busy ? "opacity-60" : ""}`} />
       {busy ? (
@@ -228,7 +228,7 @@ function SavedPhotos({
           type="button"
           aria-label={`View photo ${index + 1}`}
           onClick={() => openViewer({ title, photos, index, onDelete: remove })}
-          className="pressable aspect-square overflow-hidden rounded-[12px] bg-group"
+          className="pressable aspect-square overflow-hidden rounded-[12px] bg-group shadow-[var(--shadow-card)]"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={photo.src} alt="" className="h-full w-full object-cover" />

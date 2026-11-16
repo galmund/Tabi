@@ -21,7 +21,7 @@ import { CopyChip, CopyText, ideaMapsHref, legTransitHref, PinLink } from "@/com
 import { RouteBar } from "@/components/RouteBar";
 import { Suggestions } from "@/components/Suggestions";
 import { IdeaSummary, LegSummary } from "@/components/rows";
-import { Card, CityTag, GroupedList, MapButtons, SectionHeader, Tag } from "@/components/ui";
+import { Card, CityTag, GroupedList, MapButtons, SectionHeader, StationMark, Tag } from "@/components/ui";
 import {
   addDays,
   daysBetween,
@@ -65,18 +65,18 @@ export function HomeView({ data, serverToday }: { data: TripData; serverToday: s
   const planned = ideas.filter((idea) => idea.day).length;
   const showMissing = missing.length > 0 && phase !== "after";
 
-  const eyebrow =
+  const subtitle =
     phase === "before"
-      ? `${plural(daysBetween(today, trip.startDate), "day")} to go`
+      ? `${formatShortDay(trip.startDate)} – ${formatShortDay(trip.endDate)} · ${plural(states.length, "night")}`
       : phase === "during"
-        ? `Day ${dayNumber} of ${totalDays}`
+        ? `Day ${dayNumber} of ${totalDays} · ${formatWeekday(today)}`
         : "Okaeri — welcome home";
 
   return (
     <>
       <NavBar
         title={trip.name}
-        eyebrow={eyebrow}
+        subtitle={subtitle}
         trailing={
           <Link
             href="/settings"
@@ -86,14 +86,14 @@ export function HomeView({ data, serverToday }: { data: TripData; serverToday: s
             <Settings className="h-[22px] w-[22px]" />
           </Link>
         }
-      />
-
-      <div className="rise-in space-y-8 lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-6 lg:gap-y-8 lg:space-y-0">
-        {phase === "during" ? (
-          <TodaySection data={data} today={today} dayNumber={dayNumber} />
-        ) : phase === "before" ? (
-          <Countdown days={daysBetween(today, trip.startDate)} startDate={trip.startDate} endDate={trip.endDate} nights={states.length} />
+      >
+        {phase === "before" ? (
+          <Countdown days={daysBetween(today, trip.startDate)} missing={states.length - covered} />
         ) : null}
+      </NavBar>
+
+      <div className="rise-in -mt-2 space-y-8 lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-6 lg:gap-y-9 lg:space-y-0">
+        {phase === "during" ? <TodaySection data={data} today={today} dayNumber={dayNumber} /> : null}
 
         <section className="lg:col-span-2">
           <SectionHeader title="Route" trailing={`${covered}/${states.length} nights`} />
@@ -108,23 +108,24 @@ export function HomeView({ data, serverToday }: { data: TripData; serverToday: s
               title="No hotel yet"
               trailing={plural(missing.reduce((sum, range) => sum + range.nights, 0), "night")}
             />
-            <GroupedList inset={16 + 36 + 12}>
+            <GroupedList inset={16 + 44 + 12}>
               {missing.map((range) => (
                 <li key={range.from}>
                   <Link
                     href={`/bookings?add=stay&from=${range.from}&to=${addDays(range.to, 1)}`}
-                    className="flex items-center gap-3 px-4 py-3 active:bg-fill"
+                    className="flex items-center gap-3 px-4 py-2.5 active:bg-fill"
                   >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-bad/15 text-bad">
-                      <BedDouble className="h-[18px] w-[18px]" />
-                    </span>
+                    <StationMark number={daysBetween(trip.startDate, range.from) + 1} label="day" tone="bad" />
                     <span className="min-w-0 flex-1">
-                      <span className="tnum block text-[17px]">
+                      <span className="tnum block text-[17px] font-semibold leading-tight">
                         {range.nights === 1 ? `Night of ${formatDay(range.from)}` : `${formatRange(range.from, range.to)} nights`}
                       </span>
-                      <span className="block text-[14px] text-dim">{plural(range.nights, "night")} · tap to add a stay</span>
+                      <span className="mt-0.5 flex items-center gap-1 text-[14px] text-dim">
+                        <BedDouble className="h-3.5 w-3.5" />
+                        {plural(range.nights, "night")} without a bed
+                      </span>
                     </span>
-                    <ChevronRight className="h-5 w-5 shrink-0 text-faint" />
+                    <span className="shrink-0 rounded-full bg-bad/10 px-2.5 py-1 text-[13px] font-semibold text-bad">Add stay</span>
                   </Link>
                 </li>
               ))}
@@ -166,7 +167,7 @@ export function HomeView({ data, serverToday }: { data: TripData; serverToday: s
                     key={`todo-${item.todo.id}`}
                     href="/todos"
                     icon={<ListChecks className="h-[18px] w-[18px]" />}
-                    tone={daysBetween(today, item.day) <= SOON_DAYS ? "accent" : "neutral"}
+                    tone={daysBetween(today, item.day) <= SOON_DAYS ? "orange" : "neutral"}
                     title={item.todo.title}
                     detail={`Due ${formatDay(item.day)} · ${inDays(today, item.day)}`}
                   />
@@ -176,14 +177,13 @@ export function HomeView({ data, serverToday }: { data: TripData; serverToday: s
           )}
         </section>
 
-        <section
-          className={`grid grid-cols-3 gap-2 lg:gap-3 ${
-            phase === "before" ? "lg:col-start-2 lg:row-start-1 lg:self-stretch" : "lg:col-span-2"
-          }`}
-        >
-          <Stat href="/bookings" icon={<Moon className="h-5 w-5" />} value={`${covered}/${states.length}`} label="Nights covered" />
-          <Stat href="/ideas" icon={<Lightbulb className="h-5 w-5" />} value={`${planned}/${ideas.length}`} label="Ideas planned" />
-          <Stat href="/todos" icon={<ListChecks className="h-5 w-5" />} value={String(openTodos)} label="To-dos open" />
+        <section className="lg:col-span-2">
+          <SectionHeader title="At a glance" />
+          <ul className="card grid grid-cols-3 divide-x-[0.5px] divide-line overflow-hidden">
+            <Stat href="/bookings" icon={<Moon className="h-4 w-4" />} value={`${covered}/${states.length}`} label="Nights covered" />
+            <Stat href="/ideas" icon={<Lightbulb className="h-4 w-4" />} value={`${planned}/${ideas.length}`} label="Ideas planned" />
+            <Stat href="/todos" icon={<ListChecks className="h-4 w-4" />} value={String(openTodos)} label="To-dos open" />
+          </ul>
         </section>
       </div>
     </>
@@ -197,32 +197,16 @@ function inDays(today: string, day: string): string {
   return `in ${days} days`;
 }
 
-function Countdown({
-  days,
-  startDate,
-  endDate,
-  nights,
-}: {
-  days: number;
-  startDate: string;
-  endDate: string;
-  nights: number;
-}) {
+function Countdown({ days, missing }: { days: number; missing: number }) {
   return (
-    <Card className="flex items-center gap-4 py-5 lg:self-stretch">
-      <div className="text-center">
-        <p className="num text-[44px] font-bold leading-none text-accent">{days}</p>
-        <p className="mt-1 text-[13px] font-medium text-dim">{days === 1 ? "day" : "days"}</p>
-      </div>
-      <div className="min-w-0 border-l border-line pl-4">
-        <p className="text-[17px] font-semibold">
-          {formatShortDay(startDate)} → {formatShortDay(endDate)}
-        </p>
-        <p className="mt-0.5 text-[15px] text-dim">
-          {plural(nights, "night")} · {startDate.slice(0, 4)}
-        </p>
-      </div>
-    </Card>
+    <div className="mt-6 flex items-end gap-4">
+      <p className="num text-[64px] font-bold leading-[0.82] tracking-[-0.05em] lg:text-[76px]">{days}</p>
+      <p className="pb-0.5 text-[15px] font-medium leading-snug text-dim">
+        {days === 1 ? "day" : "days"} to go
+        <br />
+        {missing === 0 ? "every night has a bed" : `${plural(missing, "night")} still empty`}
+      </p>
+    </div>
   );
 }
 
@@ -468,9 +452,9 @@ function ComingRow({
   return (
     <li>
       <Link href={href} className="flex items-center gap-3 px-4 py-3 active:bg-fill">
-        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${tones[tone]}`}>{icon}</span>
+        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] ${tones[tone]}`}>{icon}</span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[17px]">{title}</span>
+          <span className="block truncate text-[17px] font-medium">{title}</span>
           <span className="tnum block text-[14px] text-dim">{detail}</span>
         </span>
         <ChevronRight className="h-5 w-5 shrink-0 text-faint" />
@@ -491,15 +475,12 @@ function Stat({
   label: string;
 }) {
   return (
-    <Link
-      href={href}
-      className="pressable flex flex-col items-center rounded-card bg-elev px-2 py-4 text-center hover:bg-elev2"
-    >
-      <span className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-accent/15 text-accent">
-        {icon}
-      </span>
-      <span className="num text-[22px] font-bold leading-none">{value}</span>
-      <span className="mt-1.5 text-[12px] font-medium leading-tight text-dim">{label}</span>
-    </Link>
+    <li>
+      <Link href={href} className="flex h-full flex-col px-3.5 py-3.5 transition-colors duration-200 hover:bg-fill active:bg-fill active:duration-0 lg:px-5 lg:py-4">
+        <span className="text-accent">{icon}</span>
+        <span className="num mt-2 text-[24px] font-bold leading-none">{value}</span>
+        <span className="mt-1 text-[13px] font-medium leading-tight text-dim">{label}</span>
+      </Link>
+    </li>
   );
 }

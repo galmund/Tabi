@@ -33,13 +33,13 @@ export const IDEA_KIND_LABEL: Record<IdeaKind, string> = {
 };
 
 export const IDEA_KIND_COLOR: Record<IdeaKind, string> = {
-  SIGHT: "#0a84ff",
-  FOOD: "#ff9f0a",
-  SHOPPING: "#bf5af2",
-  ONSEN: "#64d2ff",
-  EXPERIENCE: "#30d158",
-  NIGHTLIFE: "#ff375f",
-  WALK: "#ffd60a",
+  SIGHT: "#2f6db5",
+  FOOD: "#c46a14",
+  SHOPPING: "#8e3b8f",
+  ONSEN: "#2a8aa0",
+  EXPERIENCE: "#3c8d6e",
+  NIGHTLIFE: "#b8406a",
+  WALK: "#a07d12",
 };
 
 export const PRIORITY_LABEL: Record<Priority, string> = {
@@ -60,6 +60,19 @@ export const PAYMENT_LABEL: Record<Payment, string> = {
 };
 
 export const CITY_COLORS = [
+  "#2a93a6",
+  "#8e3b8f",
+  "#3c8d6e",
+  "#d9822b",
+  "#6a5fb0",
+  "#c4476a",
+  "#2f6db5",
+  "#8c6239",
+  "#c99a1a",
+  "#4f9f8f",
+] as const;
+
+const LEGACY_CITY_COLORS = [
   "#30b0c7",
   "#af52de",
   "#34c759",
@@ -70,7 +83,12 @@ export const CITY_COLORS = [
   "#a2845e",
   "#ffcc00",
   "#00c7be",
-] as const;
+];
+
+export function cityColor(color: string): string {
+  const index = LEGACY_CITY_COLORS.indexOf(color.toLowerCase());
+  return index === -1 ? color : CITY_COLORS[index];
+}
 
 const isOneOf =
   <T extends string>(values: readonly T[]) =>

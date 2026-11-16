@@ -23,8 +23,8 @@ export const metadata: Metadata = {
   },
 };
 
-const LIGHT_BAR = "#f2f2f7";
-const DARK_BAR = "#000000";
+const LIGHT_BAR = "#12294a";
+const DARK_BAR = "#0f2744";
 
 export async function generateViewport(): Promise<Viewport> {
   const theme = await getThemeChoice();

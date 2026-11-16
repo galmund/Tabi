@@ -84,13 +84,13 @@ export function IdeasView({ data }: { data: TripData }) {
     <>
       <NavBar
         title="Ideas"
-        eyebrow={`${plural(ideas.length, "idea")} · ${unplanned} not on a day yet`}
+        subtitle={`${plural(ideas.length, "idea")} · ${unplanned} not on a day yet`}
         trailing={
           <button
             type="button"
             aria-label="Add idea"
             onClick={() => setEditing({ kind: "new" })}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-accent active:bg-fill"
+            className="pressable flex h-9 w-9 items-center justify-center rounded-full text-accent active:bg-fill"
           >
             <Plus className="h-6 w-6" strokeWidth={2.4} />
           </button>
@@ -138,7 +138,7 @@ export function IdeasView({ data }: { data: TripData }) {
                       {group.city ? <CityDot color={group.city.color} className="h-3 w-3" /> : null}
                       {group.city?.name ?? "No city yet"}
                       {group.city?.nameJa ? (
-                        <span className="text-[17px] font-medium text-dim">{group.city.nameJa}</span>
+                        <span className="jp text-[16px] font-medium text-dim">{group.city.nameJa}</span>
                       ) : null}
                     </span>
                   }
@@ -190,7 +190,7 @@ export function IdeasView({ data }: { data: TripData }) {
                   <button
                     type="button"
                     onClick={() => setEditing({ kind: "new", city: group.city?.name })}
-                    className="pressable flex min-h-[132px] items-center justify-center gap-2 rounded-card border border-dashed border-line text-[15px] font-semibold text-dim hover:border-accent/50 hover:text-accent"
+                    className="pressable flex min-h-[132px] items-center justify-center gap-2 rounded-card border border-dashed border-faint text-[15px] font-semibold text-dim hover:border-accent/50 hover:bg-accent/[0.04] hover:text-accent"
                   >
                     <Plus className="h-[18px] w-[18px]" />
                     {group.city ? `Add to ${group.city.name}` : "Add idea"}
@@ -278,7 +278,7 @@ function IdeaCard({ idea, onView, onSchedule, onEdit, rowRef, dragging, handle }
     <article
       ref={rowRef}
       data-drag-row
-      className={`group relative flex min-h-[132px] flex-col rounded-card bg-elev p-4 transition-[transform,box-shadow,opacity] duration-200 hover:-translate-y-0.5 hover:shadow-[var(--shadow-thumb)] ${
+      className={`card group relative flex min-h-[132px] flex-col p-4 transition-[translate,box-shadow,opacity] duration-200 ease-[var(--ease-out)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-card),0_10px_24px_-12px_rgb(17_34_58/0.28)] ${
         dragging ? "opacity-30" : ""
       }`}
     >
@@ -327,8 +327,14 @@ function IdeaCardHeading({ idea }: { idea: IdeaRow }) {
           <Icon className="h-5 w-5" />
         </IconCircle>
       )}
-      <div className="min-w-0 flex-1 pt-0.5">
-        <p className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide" style={{ color }}>
+      <div className="min-w-0 flex-1">
+        <h3 dir="auto" className="line-clamp-2 text-left text-[17px] font-semibold leading-snug">
+          {idea.name}
+        </h3>
+        <p
+          className="mt-0.5 flex items-center gap-1.5 text-[13px] font-medium"
+          style={{ color: `color-mix(in srgb, ${color} 60%, var(--color-ink))` }}
+        >
           {IDEA_KIND_LABEL[idea.kind]}
           {idea.priority === "MUST" ? (
             <span className="flex items-center gap-0.5 text-yellow">
@@ -337,9 +343,6 @@ function IdeaCardHeading({ idea }: { idea: IdeaRow }) {
             </span>
           ) : null}
         </p>
-        <h3 dir="auto" className="mt-0.5 line-clamp-2 text-left text-[17px] font-semibold leading-snug">
-          {idea.name}
-        </h3>
       </div>
     </div>
   );
@@ -366,7 +369,7 @@ function DayButton({
       className={`pressable flex h-8 shrink-0 items-center justify-center gap-1 rounded-full text-[13px] font-semibold ${
         compact && !idea.day ? "w-8" : "px-2.5"
       } ${
-        idea.day ? "bg-fill text-ink" : quiet ? "text-accent hover:bg-accent/10" : "bg-accent/15 text-accent"
+        idea.day ? "bg-fill text-ink" : quiet ? "text-accent hover:bg-accent/10" : "bg-accent/12 text-accent hover:bg-accent/18"
       } ${className}`}
     >
       {idea.day ? (
@@ -410,7 +413,7 @@ function FilterChip({
       aria-pressed={active}
       onClick={onClick}
       className={`pressable flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[14px] font-semibold ${
-        active ? "bg-ink text-bg" : "bg-elev text-dim"
+        active ? "bg-accent text-on-accent shadow-[var(--shadow-thumb)]" : "bg-elev text-dim shadow-[var(--shadow-card)] hover:text-ink"
       }`}
     >
       {color ? <CityDot color={color} className="h-2 w-2" /> : null}

@@ -23,7 +23,7 @@ export function TabBar() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-bar backdrop-blur-2xl backdrop-saturate-150 lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 border-t-[0.5px] border-line bg-bar backdrop-blur-2xl backdrop-saturate-150 lg:hidden"
       style={{ paddingBottom: "var(--safe-bottom)" }}
     >
       <ul className="mx-auto flex h-[var(--tabbar-h)] max-w-lg">
@@ -37,12 +37,12 @@ export function TabBar() {
                 prefetch
                 aria-current={active ? "page" : undefined}
                 className={`group flex h-full flex-col items-center justify-center gap-[3px] text-[10px] font-medium tracking-normal transition-colors duration-200 ${
-                  active ? "text-accent" : "text-[#8e8e93] active:text-ink"
+                  active ? "text-accent" : "text-dim active:text-ink"
                 }`}
               >
                 <Icon
                   className="h-[25px] w-[25px] transition-transform duration-150 ease-[var(--ease-out)] group-active:scale-90"
-                  strokeWidth={active ? 2.3 : 1.9}
+                  strokeWidth={active ? 2.25 : 1.75}
                 />
                 {tab.label}
               </Link>
@@ -59,12 +59,14 @@ export function Sidebar({ tripName }: { tripName: string }) {
   const items = [...TABS, { href: "/settings", label: "Settings", icon: Settings }];
 
   return (
-    <aside className="sidebar fixed inset-y-0 left-0 z-40 hidden w-[var(--sidebar-w)] flex-col border-r border-line bg-bar backdrop-blur-2xl backdrop-saturate-150 lg:flex">
-      <div className="flex items-center gap-2.5 px-5 pb-5 pt-6">
-        <Image src="/icon.svg" alt="" width={30} height={30} className="rounded-[8px]" priority />
+    <aside className="sidebar on-sky fixed inset-y-0 left-0 z-40 hidden w-[var(--sidebar-w)] flex-col bg-sky-deep lg:flex">
+      <div className="flex items-center gap-3 px-5 pb-7 pt-7">
+        <Image src="/icon.svg" alt="" width={34} height={34} className="rounded-[9px]" priority />
         <div className="min-w-0">
-          <p className="text-[15px] font-semibold leading-tight">Tabi</p>
-          <p className="truncate text-[12px] leading-tight text-dim">{tripName}</p>
+          <p className="flex items-baseline gap-1.5 text-[16px] font-semibold leading-tight">
+            Tabi <span className="jp text-[13px] font-normal text-dim">旅</span>
+          </p>
+          <p className="truncate text-[13px] leading-tight text-dim">{tripName}</p>
         </div>
       </div>
       <ul className="flex flex-1 flex-col gap-0.5 px-3">
@@ -77,11 +79,11 @@ export function Sidebar({ tripName }: { tripName: string }) {
                 href={item.href}
                 prefetch
                 aria-current={active ? "page" : undefined}
-                className={`flex h-8 items-center gap-2.5 rounded-[8px] px-2.5 text-[14px] font-medium transition-[background-color,color,scale] duration-150 active:scale-[0.98] ${
-                  active ? "bg-accent/15 text-accent" : "text-ink hover:bg-fill active:bg-fill"
+                className={`flex h-9 items-center gap-3 rounded-[9px] px-3 text-[14px] font-medium transition-[background-color,color,scale] duration-150 active:scale-[0.98] ${
+                  active ? "bg-white/[0.14] text-ink shadow-[inset_0_0.5px_0_rgb(255_255_255/0.12)]" : "text-dim hover:bg-white/[0.07] hover:text-ink"
                 }`}
               >
-                <Icon className={`h-[18px] w-[18px] ${active ? "" : "text-accent"}`} strokeWidth={2} />
+                <Icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.2 : 1.8} />
                 {item.label}
               </Link>
             </li>

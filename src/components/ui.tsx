@@ -12,7 +12,7 @@ export function Card({
   style?: CSSProperties;
 }) {
   return (
-    <div className={`rounded-card bg-elev p-4 ${className}`} style={style}>
+    <div className={`card p-4 ${className}`} style={style}>
       {children}
     </div>
   );
@@ -28,15 +28,15 @@ export function SectionHeader({
   className?: string;
 }) {
   return (
-    <div className={`mb-2.5 flex items-baseline justify-between gap-3 px-1 ${className}`}>
-      <h2 className="text-[22px] font-bold leading-7 tracking-[-0.02em]">{title}</h2>
-      {trailing ? <div className="tnum shrink-0 text-[15px] text-dim">{trailing}</div> : null}
+    <div className={`mb-3 flex items-baseline justify-between gap-3 px-1 ${className}`}>
+      <h2 className="text-[20px] font-bold leading-6 tracking-[-0.022em]">{title}</h2>
+      {trailing ? <div className="tnum shrink-0 text-[14px] font-medium text-dim">{trailing}</div> : null}
     </div>
   );
 }
 
 export function SectionFooter({ children }: { children: ReactNode }) {
-  return <p className="mt-2 px-4 text-[13px] leading-snug text-dim">{children}</p>;
+  return <p className="mt-2.5 px-4 text-[13px] leading-snug text-dim">{children}</p>;
 }
 
 export function GroupedList({
@@ -50,7 +50,7 @@ export function GroupedList({
 }) {
   return (
     <ul
-      className={`separated rounded-card bg-elev ${clip ? "overflow-hidden" : ""}`}
+      className={`separated card ${clip ? "overflow-hidden" : ""}`}
       style={{ "--inset": `${inset}px` } as CSSProperties}
     >
       {children}
@@ -70,9 +70,9 @@ export function EmptyState({
   children?: ReactNode;
 }) {
   return (
-    <div className="rounded-card bg-elev px-6 py-10 text-center">
+    <div className="card px-6 py-11 text-center">
       {icon ? (
-        <div className="mx-auto mb-3.5 flex h-12 w-12 items-center justify-center rounded-full bg-fill text-dim">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-[12px] bg-fill text-accent">
           {icon}
         </div>
       ) : null}
@@ -86,7 +86,7 @@ export function EmptyState({
 export function CityDot({ color, className = "" }: { color: string; className?: string }) {
   return (
     <span
-      className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${className}`}
+      className={`inline-block h-2.5 w-2.5 shrink-0 rounded-[3px] ${className}`}
       style={{ backgroundColor: color }}
     />
   );
@@ -96,10 +96,10 @@ export function CityTag({ city }: { city: { name: string; nameJa: string | null;
   return (
     <span
       className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-semibold"
-      style={{ color: city.color, backgroundColor: `${city.color}26` }}
+      style={{ color: `color-mix(in srgb, ${city.color} 55%, var(--color-ink))`, backgroundColor: `${city.color}24` }}
     >
       {city.name}
-      {city.nameJa ? <span className="font-medium opacity-75">{city.nameJa}</span> : null}
+      {city.nameJa ? <span className="jp font-medium opacity-80">{city.nameJa}</span> : null}
     </span>
   );
 }
@@ -129,7 +129,7 @@ export function Tag({
 
 export function MapButtons({ query, mapsUrl }: { query: string; mapsUrl?: string | null }) {
   const button =
-    "pressable flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[12px] bg-fill text-[15px] font-semibold text-accent";
+    "pressable flex h-11 flex-1 items-center justify-center gap-1.5 rounded-[11px] bg-fill text-[15px] font-semibold text-accent hover:bg-accent/12";
   return (
     <div className="flex gap-2">
       <a href={mapsUrl ?? googleMapsUrl(query)} target="_blank" rel="noreferrer" className={button}>
@@ -155,10 +155,40 @@ export function IconCircle({
 }) {
   return (
     <span
-      className="flex shrink-0 items-center justify-center rounded-full"
-      style={{ width: size, height: size, color, backgroundColor: `${color}24` }}
+      className="flex shrink-0 items-center justify-center"
+      style={{
+        width: size,
+        height: size,
+        color: `color-mix(in srgb, ${color} 70%, var(--color-ink))`,
+        backgroundColor: `${color}1f`,
+        borderRadius: Math.round(size * 0.3),
+      }}
     >
       {children}
+    </span>
+  );
+}
+
+export function StationMark({
+  number,
+  label,
+  tone = "ink",
+  className = "",
+}: {
+  number: number;
+  label?: string;
+  tone?: "ink" | "accent" | "bad";
+  className?: string;
+}) {
+  const tones = { ink: "text-ink", accent: "text-accent", bad: "text-bad" };
+  return (
+    <span
+      className={`m-[3px] flex h-[44px] w-[38px] shrink-0 flex-col items-center justify-center rounded-[2px] border border-current outline outline-1 outline-offset-2 outline-current ${tones[tone]} ${className}`}
+    >
+      <span className="num text-[17px] font-bold leading-none">{number}</span>
+      {label ? (
+        <span className="mt-[3px] text-[9px] font-semibold uppercase leading-none tracking-[0.08em] opacity-70">{label}</span>
+      ) : null}
     </span>
   );
 }

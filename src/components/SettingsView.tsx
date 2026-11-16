@@ -99,7 +99,7 @@ export function SettingsView({ data, theme }: { data: TripData; theme: ThemeChoi
               <button
                 type="button"
                 onClick={() => setEditingCity("new")}
-                className="flex items-center gap-1 text-accent"
+                className="press-fade flex items-center gap-1 text-accent"
               >
                 <Plus className="h-4 w-4" strokeWidth={2.6} />
                 Add
@@ -124,7 +124,7 @@ export function SettingsView({ data, theme }: { data: TripData; theme: ThemeChoi
                       <span className="min-w-0 flex-1">
                         <span className="block text-[17px]">
                           {city.name}
-                          {city.nameJa ? <span className="ml-2 text-dim">{city.nameJa}</span> : null}
+                          {city.nameJa ? <span className="jp ml-2 text-dim">{city.nameJa}</span> : null}
                         </span>
                         <span className="block text-[14px] text-dim">
                           {stayCount} {stayCount === 1 ? "stay" : "stays"} · {ideaCount}{" "}
@@ -179,7 +179,7 @@ function CitySheet({ city, inUse, onDone }: { city?: CityRow; inUse: boolean; on
       </Section>
       <div>
         <GroupLabel>Colour</GroupLabel>
-        <div className="grid grid-cols-5 gap-3 rounded-[12px] bg-group p-4">
+        <div className="grid grid-cols-5 gap-3 rounded-[12px] bg-group shadow-[var(--shadow-card)] p-4">
           {CITY_COLORS.map((swatch) => (
             <button
               key={swatch}
@@ -187,7 +187,7 @@ function CitySheet({ city, inUse, onDone }: { city?: CityRow; inUse: boolean; on
               aria-label={`Colour ${swatch}`}
               aria-pressed={color === swatch}
               onClick={() => setColor(swatch)}
-              className="pressable mx-auto flex h-10 w-10 items-center justify-center rounded-full"
+              className="pressable mx-auto flex h-10 w-10 items-center justify-center rounded-[10px]"
               style={{
                 backgroundColor: swatch,
                 boxShadow: color === swatch ? `0 0 0 3px var(--color-group), 0 0 0 5px ${swatch}` : undefined,

@@ -135,7 +135,7 @@ export function DayPickerSheet({
               type="button"
               disabled={pending}
               onClick={() => pick(null, close)}
-              className="pressable flex h-12 w-full items-center justify-center gap-2 rounded-[12px] bg-group text-[17px] text-accent"
+              className="pressable flex h-12 w-full items-center justify-center gap-2 rounded-[12px] bg-group shadow-[var(--shadow-card)] text-[17px] text-accent"
             >
               <Undo2 className="h-[18px] w-[18px]" />
               Move back to Ideas

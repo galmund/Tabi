@@ -45,7 +45,7 @@ export function TodosView({
     <>
       <NavBar
         title={list === "todos" ? "To-dos" : "Wish List"}
-        eyebrow={
+        subtitle={
           list === "todos"
             ? open.length === 0
               ? "All done"
@@ -57,7 +57,7 @@ export function TodosView({
             type="button"
             aria-label={list === "todos" ? "Add to-do" : "Add to wish list"}
             onClick={() => setEditing(list === "todos" ? { kind: "todo" } : { kind: "wish" })}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-accent active:bg-fill"
+            className="pressable flex h-9 w-9 items-center justify-center rounded-full text-accent active:bg-fill"
           >
             <Plus className="h-6 w-6" strokeWidth={2.4} />
           </button>

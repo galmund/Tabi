@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { THEME_COOKIE, TIME_ZONE_COOKIE, type ThemeChoice } from "@/lib/cookies";
 import { todayIn } from "@/lib/dates";
+import { cityColor } from "@/lib/labels";
 
 export const TRIP_ID = "trip";
 
@@ -23,6 +24,12 @@ export const photoSrc = (id: string) => `/photos/${id}`;
 const withSources = <T extends { photos: { id: string }[] }>(row: T) => ({
   ...row,
   photos: row.photos.map((photo) => ({ id: photo.id, src: photoSrc(photo.id) })),
+});
+
+const paint = <T extends { color: string }>(city: T): T => ({ ...city, color: cityColor(city.color) });
+const paintRow = <T extends { city: { color: string } | null }>(row: T): T => ({
+  ...row,
+  city: row.city ? paint(row.city) : row.city,
 });
 
 export const getTripData = cache(async () => {
@@ -58,14 +65,14 @@ export const getTripData = cache(async () => {
   ]);
   return {
     trip,
-    cities,
-    stays: stays.map(withSources),
+    cities: cities.map(paint),
+    stays: stays.map(withSources).map(paintRow),
     legs: legs.map(withSources),
-    ideas: ideas.map(withSources),
+    ideas: ideas.map(withSources).map(paintRow),
     todos,
     notes,
-    wishes: wishes.map(withSources),
-    dayCities,
+    wishes: wishes.map(withSources).map(paintRow),
+    dayCities: dayCities.map(paintRow),
   };
 });
 

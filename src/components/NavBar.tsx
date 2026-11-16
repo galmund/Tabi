@@ -6,16 +6,16 @@ import { ChevronLeft } from "lucide-react";
 
 export type NavBarProps = {
   title: string;
-  eyebrow?: string;
+  subtitle?: ReactNode;
   back?: { href: string; label: string };
-  
   large?: boolean;
   trailing?: ReactNode;
+  children?: ReactNode;
 };
 
 const HERO_PX = 200;
 
-export function NavBar({ title, eyebrow, back, large = true, trailing }: NavBarProps) {
+export function NavBar({ title, subtitle, back, large = true, trailing, children }: NavBarProps) {
   const barRef = useRef<HTMLDivElement>(null);
   const markerRef = useRef<HTMLDivElement>(null);
   const [collapsed, setCollapsed] = useState(false);
@@ -41,29 +41,29 @@ export function NavBar({ title, eyebrow, back, large = true, trailing }: NavBarP
 
   return (
     <>
-      <header className="sticky top-0 z-30 -mx-4 lg:-mx-8" style={{ paddingTop: "var(--safe-top)" }}>
+      <header className="on-sky sticky top-0 z-30 -mx-4 lg:-mx-8" style={{ paddingTop: "var(--safe-top)" }}>
         <div
           aria-hidden
-          className={`absolute inset-y-0 left-1/2 w-screen -translate-x-1/2 lg:w-[calc(100vw-var(--sidebar-w))] border-b bg-bar backdrop-blur-xl backdrop-saturate-150 transition-[opacity,border-color] duration-200 ${
-            collapsed ? "border-line opacity-100" : "border-transparent opacity-0"
+          className={`absolute inset-y-0 left-1/2 w-screen -translate-x-1/2 bg-sky-deep shadow-[0_1px_0_rgb(0_0_0/0.12)] transition-opacity duration-200 lg:w-[calc(100vw-var(--sidebar-w))] ${
+            collapsed ? "opacity-100" : "opacity-0"
           }`}
         />
-        <div ref={barRef} className="relative flex h-11 items-center justify-between gap-2 px-4 lg:h-13 lg:px-8">
+        <div ref={barRef} className="relative flex h-[var(--navbar-h)] items-center justify-between gap-2 px-4 lg:px-8">
           <div className="min-w-0 flex-1">
             {back ? (
               <Link
                 href={back.href}
-                className="press-fade -ml-2 inline-flex h-11 items-center pr-2 text-[17px] text-accent lg:hidden"
+                className="press-fade -ml-2 inline-flex h-11 items-center pr-2 text-[17px] lg:hidden"
               >
-                <ChevronLeft className="h-7 w-7" strokeWidth={2.4} />
+                <ChevronLeft className="h-7 w-7" strokeWidth={2.2} />
                 <span className="-ml-0.5 truncate">{back.label}</span>
               </Link>
             ) : null}
           </div>
           <span
             aria-hidden={!collapsed}
-            className={`pointer-events-none absolute left-1/2 max-w-[44%] -translate-x-1/2 truncate text-[17px] font-semibold transition-opacity duration-200 ${
-              collapsed ? "opacity-100" : "opacity-0"
+            className={`pointer-events-none absolute left-1/2 max-w-[48%] -translate-x-1/2 truncate text-[17px] font-semibold transition-[opacity,translate] duration-200 ease-[var(--ease-out)] ${
+              collapsed ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"
             }`}
           >
             {title}
@@ -73,11 +73,10 @@ export function NavBar({ title, eyebrow, back, large = true, trailing }: NavBarP
       </header>
 
       {large ? (
-        <div className="px-1 pb-5 pt-1 lg:pb-6 lg:pt-2">
-          {eyebrow ? (
-            <p className="tnum mb-0.5 text-[13px] font-semibold uppercase tracking-[0.04em] text-dim">{eyebrow}</p>
-          ) : null}
-          <h1 className="text-[34px] font-bold leading-[41px] tracking-[-0.025em] lg:text-[38px] lg:leading-[44px]">{title}</h1>
+        <div className="sky on-sky relative px-1 pb-14 pt-1 lg:pb-16 lg:pt-3">
+          <h1 className="text-[34px] font-bold leading-[40px] tracking-[-0.03em] lg:text-[40px] lg:leading-[46px]">{title}</h1>
+          {subtitle ? <p className="tnum mt-1 text-[15px] font-medium text-dim">{subtitle}</p> : null}
+          {children}
           <div ref={markerRef} />
         </div>
       ) : (

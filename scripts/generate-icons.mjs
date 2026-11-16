@@ -39,28 +39,14 @@ const TORII = `
 function iconSvg({ fullBleed }) {
   const shape = squirclePath(SIZE, RADIUS);
   const fill = fullBleed ? `<rect width="${SIZE}" height="${SIZE}"` : `<path d="${shape}"`;
+  const frame = fullBleed ? 200 : 170;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ff8a5c"/>
-      <stop offset="0.55" stop-color="#ec4f2c"/>
-      <stop offset="1" stop-color="#c3321a"/>
-    </linearGradient>
-    <radialGradient id="sheen" cx="0.5" cy="0" r="0.75">
-      <stop offset="0" stop-color="#fff" stop-opacity="0.28"/>
-      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="glyph" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#ffe6dc"/>
-    </linearGradient>
-    <filter id="lift" x="-20%" y="-20%" width="140%" height="150%">
-      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#5c1405" flood-opacity="0.35"/>
-    </filter>
-  </defs>
-  ${fill} fill="url(#bg)"/>
-  ${fill} fill="url(#sheen)"/>
-  <g fill="url(#glyph)" filter="url(#lift)">${TORII}
+  ${fill} fill="#12294a"/>
+  <g fill="none" stroke="#ffffff" stroke-width="14">
+    <rect x="${frame}" y="${frame}" width="${SIZE - 2 * frame}" height="${SIZE - 2 * frame}" rx="6"/>
+    <rect x="${frame + 40}" y="${frame + 40}" width="${SIZE - 2 * frame - 80}" height="${SIZE - 2 * frame - 80}" rx="4"/>
+  </g>
+  <g fill="#ffffff" transform="translate(512 528) scale(0.6) translate(-512 -519)">${TORII}
   </g>${
     fullBleed
       ? ""

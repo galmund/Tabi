@@ -5,11 +5,11 @@ import { ChevronsUpDown } from "lucide-react";
 import { normalizeClock } from "@/lib/dates";
 
 export function FormGroup({ children }: { children: ReactNode }) {
-  return <div className="separated overflow-hidden rounded-[12px] bg-group">{children}</div>;
+  return <div className="separated overflow-hidden rounded-[12px] bg-group shadow-[var(--shadow-card)]">{children}</div>;
 }
 
 export function GroupLabel({ children }: { children: ReactNode }) {
-  return <p className="mb-1.5 px-4 text-[13px] uppercase tracking-[0.03em] text-dim">{children}</p>;
+  return <p className="mb-2 px-4 text-[13px] font-semibold text-dim">{children}</p>;
 }
 
 export function Section({ label, children }: { label?: ReactNode; children: ReactNode }) {
@@ -191,7 +191,7 @@ export function NotesField({
   return (
     <div>
       <GroupLabel>{label}</GroupLabel>
-      <div className="rounded-[12px] bg-group px-4 py-3">
+      <div className="rounded-[12px] bg-group px-4 py-3 shadow-[var(--shadow-card)]">
         <textarea
           name={name}
           defaultValue={defaultValue ?? ""}
@@ -231,7 +231,7 @@ export function ChoiceChips<T extends string>({
             aria-pressed={active}
             onClick={() => setValue(option)}
             className={`pressable flex h-9 items-center gap-1.5 rounded-full px-3.5 text-[15px] font-semibold ${
-              active ? "text-white" : "bg-group text-dim"
+              active ? (color ? "text-white" : "text-on-accent") : "bg-group text-dim hover:text-ink"
             }`}
             style={active ? { backgroundColor: color ?? "var(--color-accent)" } : undefined}
           >

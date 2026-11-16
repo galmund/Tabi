@@ -20,7 +20,7 @@ export function EditButton({ label, onClick }: { label: string; onClick: () => v
       aria-label={label}
       title="Edit"
       onClick={onClick}
-      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-accent hover:bg-fill active:bg-fill"
+      className="pressable flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-accent hover:bg-fill active:bg-fill"
     >
       <Pencil className="h-[17px] w-[17px]" />
     </button>
@@ -72,7 +72,7 @@ function Notes({ text }: { text: string | null }) {
   return (
     <div>
       <GroupLabel>Notes</GroupLabel>
-      <p className="whitespace-pre-wrap rounded-[12px] bg-group px-4 py-3 text-[17px] leading-snug">{text}</p>
+      <p className="whitespace-pre-wrap rounded-[12px] bg-group shadow-[var(--shadow-card)] px-4 py-3 text-[17px] leading-snug">{text}</p>
     </div>
   );
 }
@@ -164,7 +164,7 @@ export function StayDetail({
           {stay.address ? (
             <div>
               <GroupLabel>Address</GroupLabel>
-              <p className="select-text rounded-[12px] bg-group px-4 py-3 text-[17px] leading-snug">{stay.address}</p>
+              <p className="select-text rounded-[12px] bg-group shadow-[var(--shadow-card)] px-4 py-3 text-[17px] leading-snug">{stay.address}</p>
             </div>
           ) : null}
           <MapButtons query={stay.address ?? `${stay.name}, ${stay.city.name}, Japan`} />
