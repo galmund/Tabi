@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { CalendarDays, CalendarPlus, ExternalLink, Pencil, Star, Ticket } from "lucide-react";
+import { CalendarDays, CalendarPlus, Car, ExternalLink, Pencil, Star, Ticket } from "lucide-react";
 import { FormGroup, GroupLabel } from "@/components/form";
 import { IDEA_ICON, TRAVEL_COLOR, TRAVEL_ICON } from "@/components/icons";
 import { PhotoStrip } from "@/components/PhotoViewer";
@@ -10,8 +10,8 @@ import { CopyChip, CopyText } from "@/components/quick";
 import { CityTag, IconCircle, MapButtons, Tag } from "@/components/ui";
 import { daysBetween, formatDay, plural } from "@/lib/dates";
 import { formatMoney, IDEA_KIND_COLOR, IDEA_KIND_LABEL, PAYMENT_LABEL, TRAVEL_MODE_LABEL } from "@/lib/labels";
-import { nightsOf } from "@/lib/plan";
-import type { IdeaRow, LegRow, StayRow } from "@/lib/trip";
+import { daysOfCar, nightsOf } from "@/lib/plan";
+import type { CarRow, IdeaRow, LegRow, StayRow } from "@/lib/trip";
 
 export function EditButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
@@ -231,6 +231,64 @@ export function LegDetail({ leg, onEdit, onDone }: { leg: LegRow; onEdit: () => 
           />
 
           <Notes text={leg.notes} />
+        </>
+      )}
+    </Sheet>
+  );
+}
+
+export function CarDetail({ car, onEdit, onDone }: { car: CarRow; onEdit: () => void; onDone: () => void }) {
+  return (
+    <Sheet title="Car" onDone={onDone} leading={{ label: "Edit", onClick: onEdit }}>
+      {() => (
+        <>
+          <Hero
+            icon={
+              <IconCircle color={TRAVEL_COLOR} size={44}>
+                <Car className="h-[22px] w-[22px]" />
+              </IconCircle>
+            }
+            title={car.company}
+          >
+            {car.status === "OPTION" ? <Tag>Option</Tag> : <Tag tone="good">Booked</Tag>}
+            <Tag>{plural(daysOfCar(car), "day")}</Tag>
+          </Hero>
+
+          <Rows
+            label="Pick-up · local time"
+            rows={[
+              ["When", at(car.pickupDate, car.pickupTime)],
+              ["Where", car.pickupPlace],
+            ]}
+          />
+          {car.pickupPlace ? <MapButtons query={car.pickupPlace} /> : null}
+
+          <Rows
+            label="Return · local time"
+            rows={[
+              ["When", at(car.returnDate, car.returnTime)],
+              ["Where", car.returnPlace],
+            ]}
+          />
+          {car.returnPlace && car.returnPlace !== car.pickupPlace ? <MapButtons query={car.returnPlace} /> : null}
+
+          <Rows
+            label="Booking"
+            rows={[
+              ["Booking no.", car.bookingRef ? <Copyable key="ref" value={car.bookingRef} /> : null],
+              ["Link", car.url ? <OpenLink key="url" href={car.url} /> : null],
+            ]}
+          />
+
+          <Rows
+            label="Cost"
+            rows={[
+              ["Price", money(car)],
+              ["Payment", car.payment ? PAYMENT_LABEL[car.payment] : null],
+            ]}
+          />
+
+          <Notes text={car.notes} />
         </>
       )}
     </Sheet>

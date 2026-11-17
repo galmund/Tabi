@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { AlertTriangle, BedDouble, LogIn, LogOut, Plane, Plus, StickyNote } from "lucide-react";
+import { AlertTriangle, BedDouble, Car, LogIn, LogOut, Plane, Plus, StickyNote } from "lucide-react";
 import { addDayCity, arrangeDay, scheduleIdea, setDayCity } from "@/app/actions";
 import { useActivityDrag } from "@/components/ActivityDrag";
 import { LegSheet } from "@/components/BookingSheets";
@@ -23,14 +23,17 @@ import { addDays, daysBetween, formatDay, formatRange, plural } from "@/lib/date
 import { useToday } from "@/lib/device";
 import {
   bookedStayOn,
+  carDays,
+  carOn,
   dayOptions,
+  newCarHref,
   newStayHref,
   nightStates,
   overnightLegOn,
   timeClashes,
   type DayOption,
 } from "@/lib/plan";
-import type { CityRow, IdeaRow, LegRow, TripData } from "@/lib/trip";
+import type { CarRow, CityRow, IdeaRow, LegRow, TripData } from "@/lib/trip";
 
 type Editing =
   | { kind: "idea"; idea: IdeaRow; fromDetail?: boolean }
@@ -126,7 +129,7 @@ export function DaysView({ data, serverToday }: { data: TripData; serverToday: s
   return (
     <>
       <NavBar title="Days" subtitle={`${formatRange(trip.startDate, trip.endDate)} · ${plural(days.length, "day")}`} />
-      <DayStrip days={days} today={today} missing={missingNights} />
+      <DayStrip days={days} today={today} missing={missingNights} cars={carDays(data.cars)} />
 
       <div className="rise-in space-y-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0 xl:grid-cols-2">
         {days.map((option) => (
@@ -137,6 +140,7 @@ export function DaysView({ data, serverToday }: { data: TripData; serverToday: s
             isLast={option.day === trip.endDate}
             items={dayItems(option.day, ideas, legs)}
             note={notes.find((entry) => entry.day === option.day)?.text ?? ""}
+            cars={data.cars}
             stay={bookedStayOn(stays, option.day)}
             leaving={stays.find((stay) => stay.status === "BOOKED" && stay.checkOut === option.day)}
             clashes={timeClashes(option.day, ideas, legs)}
@@ -240,6 +244,7 @@ function DayCard({
   isLast,
   items,
   note,
+  cars,
   stay,
   leaving,
   clashes,
@@ -253,6 +258,7 @@ function DayCard({
   isLast: boolean;
   items: DayItem[];
   note: string;
+  cars: CarRow[];
   stay: TripData["stays"][number] | undefined;
   leaving: TripData["stays"][number] | undefined;
   clashes: Map<string, string>;
@@ -293,22 +299,36 @@ function DayCard({
             {isToday ? <p className="text-[13px] font-semibold text-accent">Today</p> : null}
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => onEdit({ kind: "cities", day: option.day })}
-          aria-label={`Cities on ${formatDay(option.day)}`}
-          className="flex flex-wrap justify-end gap-1 rounded-full press-fade"
-        >
-          {option.cities.map((city) => (
-            <CityTag key={city.id} city={city} />
-          ))}
-          <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-fill px-2 py-0.5 text-[12px] font-semibold text-dim">
-            <Plus className="h-3 w-3" strokeWidth={2.8} />
-            {option.cities.length === 0 ? "City" : null}
-          </span>
-        </button>
+        <div className="flex items-start gap-1">
+          <CarChip day={option.day} car={carOn(cars, option.day)} />
+          <button
+            type="button"
+            onClick={() => onEdit({ kind: "cities", day: option.day })}
+            aria-label={`Cities on ${formatDay(option.day)}`}
+            className="flex flex-wrap justify-end gap-1 rounded-full press-fade"
+          >
+            {option.cities.map((city) => (
+              <CityTag key={city.id} city={city} />
+            ))}
+            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-fill px-2 py-0.5 text-[12px] font-semibold text-dim">
+              <Plus className="h-3 w-3" strokeWidth={2.8} />
+              {option.cities.length === 0 ? "City" : null}
+            </span>
+          </button>
+        </div>
       </header>
 
+      {cars
+        .filter((car) => car.pickupDate === option.day)
+        .map((car) => (
+          <StayMoment
+            key={`pickup-${car.id}`}
+            icon={<Car className="h-4 w-4" />}
+            label={`Pick up car${car.status === "OPTION" ? " (option)" : ""} · ${car.pickupPlace ?? car.company}`}
+            time={car.pickupTime ?? ""}
+            edge="bottom"
+          />
+        ))}
       {leaving && leaving.id !== stay?.id ? (
         <StayMoment
           icon={<LogOut className="h-4 w-4" />}
@@ -375,6 +395,17 @@ function DayCard({
         </ul>
       ) : null}
 
+      {cars
+        .filter((car) => car.returnDate === option.day)
+        .map((car) => (
+          <StayMoment
+            key={`return-${car.id}`}
+            icon={<Car className="h-4 w-4" />}
+            label={`Return car${car.status === "OPTION" ? " (option)" : ""} · ${car.returnPlace ?? car.company}`}
+            time={car.returnTime ?? ""}
+            edge="top"
+          />
+        ))}
       {stay && stay.checkIn === option.day ? (
         <StayMoment
           icon={<LogIn className="h-4 w-4" />}
@@ -756,5 +787,35 @@ function DayCitiesSheet({
         </>
       )}
     </Sheet>
+  );
+}
+
+function CarChip({ day, car }: { day: string; car: CarRow | undefined }) {
+  if (!car) {
+    return (
+      <Link
+        href={newCarHref(day, day)}
+        aria-label={`Plan a rental car from ${formatDay(day)}`}
+        title="Plan a rental car"
+        className="pressable hit-area inline-flex h-[22px] shrink-0 items-center gap-0.5 rounded-full bg-fill px-2 text-[12px] font-semibold text-dim hover:text-ink"
+      >
+        <Plus className="h-3 w-3" strokeWidth={2.8} />
+        <Car className="h-3.5 w-3.5" strokeWidth={2.2} />
+      </Link>
+    );
+  }
+  const option = car.status === "OPTION";
+  return (
+    <Link
+      href={`/bookings?car=${car.id}`}
+      aria-label={`${option ? "Planned" : "Booked"} rental car: ${car.company}`}
+      title={`${car.company}${option ? " · option, not booked yet" : " · booked"}`}
+      className={`pressable hit-area inline-flex h-[22px] shrink-0 items-center gap-1 rounded-full px-2 text-[12px] font-semibold ${
+        option ? "border border-dashed border-accent/70 text-accent" : "bg-accent text-on-accent"
+      }`}
+    >
+      <Car className="h-3.5 w-3.5" strokeWidth={2.2} />
+      {option ? "Car?" : "Car"}
+    </Link>
   );
 }

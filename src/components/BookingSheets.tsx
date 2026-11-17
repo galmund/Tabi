@@ -1,6 +1,6 @@
 "use client";
 
-import { deleteLeg, deleteStay, saveLeg, saveStay } from "@/app/actions";
+import { deleteCar, deleteLeg, deleteStay, saveCar, saveLeg, saveStay } from "@/app/actions";
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import {
   ChoiceChips,
@@ -23,7 +23,7 @@ import {
   TRAVEL_MODES,
   TRAVEL_MODE_LABEL,
 } from "@/lib/labels";
-import type { CityRow, LegRow, StayRow } from "@/lib/trip";
+import type { CarRow, CityRow, LegRow, StayRow } from "@/lib/trip";
 
 const currencyOptions = CURRENCIES.map((value) => [value, CURRENCY_LABEL[value]] as const);
 const paymentOptions = PAYMENTS.map((value) => [value, PAYMENT_LABEL[value]] as const);
@@ -182,6 +182,70 @@ export function LegSheet({
       <MoneySection price={leg?.price} currency={leg?.currency} payment={leg?.payment} />
 
       <NotesField name="notes" defaultValue={leg?.notes} placeholder="Platform, luggage space, who has the tickets…" />
+    </FormSheet>
+  );
+}
+
+export type CarDefaults = { pickupDate?: string; returnDate?: string; status?: "BOOKED" | "OPTION" };
+
+export function CarSheet({ car, defaults, onDone }: { car?: CarRow; defaults?: CarDefaults; onDone: () => void }) {
+  return (
+    <FormSheet
+      title={car ? "Edit Car" : "New Car"}
+      submitLabel={car ? "Save" : "Add"}
+      action={saveCar}
+      onDone={onDone}
+      footer={(close) =>
+        car ? <ConfirmDelete label="Delete Car" run={() => deleteCar(car.id)} onDeleted={close} /> : null
+      }
+    >
+      {car ? <input type="hidden" name="id" value={car.id} /> : null}
+
+      <ChoiceChips
+        name="status"
+        options={[
+          ["BOOKED", "Booked"],
+          ["OPTION", "Option"],
+        ]}
+        defaultValue={car?.status ?? defaults?.status ?? "BOOKED"}
+      />
+
+      <Section>
+        <TextRow name="company" placeholder="Rental company — Toyota, Times…" defaultValue={car?.company} required maxLength={120} />
+      </Section>
+
+      <Section label="Pick-up · local time">
+        <InputRow
+          label="Date"
+          name="pickupDate"
+          type="date"
+          defaultValue={car?.pickupDate ?? defaults?.pickupDate}
+          required
+        />
+        <InputRow label="At" name="pickupTime" type="time" defaultValue={car?.pickupTime} />
+        <InputRow label="Where" name="pickupPlace" defaultValue={car?.pickupPlace} placeholder="Nara Station office" />
+      </Section>
+
+      <Section label="Return · local time">
+        <InputRow
+          label="Date"
+          name="returnDate"
+          type="date"
+          defaultValue={car?.returnDate ?? defaults?.returnDate ?? defaults?.pickupDate}
+          required
+        />
+        <InputRow label="At" name="returnTime" type="time" defaultValue={car?.returnTime} />
+        <InputRow label="Where" name="returnPlace" defaultValue={car?.returnPlace} placeholder="Same office" />
+      </Section>
+
+      <Section label="Booking">
+        <InputRow label="Booking no." name="bookingRef" defaultValue={car?.bookingRef} placeholder="TR-88213" />
+        <InputRow label="Link" name="url" type="url" defaultValue={car?.url} placeholder="rent.toyota.co.jp/…" />
+      </Section>
+
+      <MoneySection price={car?.price} currency={car?.currency} payment={car?.payment} />
+
+      <NotesField name="notes" defaultValue={car?.notes} placeholder="Car class, ETC card, insurance, IDP needed…" />
     </FormSheet>
   );
 }

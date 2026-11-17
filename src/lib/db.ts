@@ -22,10 +22,16 @@ const createClient = () =>
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: ReturnType<typeof createClient>;
+  prismaClass?: typeof PrismaClient;
 };
 
-export const prisma = globalForPrisma.prisma ?? createClient();
+// After `prisma generate` the dev server hot-reloads a new PrismaClient class; a client cached from the old one lacks new models.
+const cached = globalForPrisma.prismaClass === PrismaClient ? globalForPrisma.prisma : undefined;
+if (globalForPrisma.prisma && !cached) void globalForPrisma.prisma.$disconnect();
+
+export const prisma = cached ?? createClient();
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
+  globalForPrisma.prismaClass = PrismaClient;
 }

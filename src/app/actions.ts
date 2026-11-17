@@ -296,6 +296,46 @@ export async function deleteLeg(id: string): Promise<ActionResult> {
   });
 }
 
+export async function saveCar(_: ActionResult | null, form: FormData): Promise<ActionResult> {
+  return attempt(async () => {
+    const id = text(form, "id", 40);
+    const pickupDate = requiredDay(form, "pickupDate", "Pick-up date");
+    const returnDate = requiredDay(form, "returnDate", "Return date");
+    if (returnDate < pickupDate) throw new InvalidInput("Return can't be before pick-up.");
+
+    const data = {
+      status: form.get("status") === "OPTION" ? ("OPTION" as const) : ("BOOKED" as const),
+      company: required(form, "company", "Company", 120),
+      pickupDate,
+      pickupTime: clock(form, "pickupTime", "Pick-up time"),
+      pickupPlace: text(form, "pickupPlace", 200),
+      returnDate,
+      returnTime: clock(form, "returnTime", "Return time"),
+      returnPlace: text(form, "returnPlace", 200),
+      bookingRef: text(form, "bookingRef", 80),
+      url: url(form, "url"),
+      notes: text(form, "notes", 2000),
+      ...money(form),
+    };
+
+    if (id) await prisma.carRental.update({ where: { id }, data });
+    else await prisma.carRental.create({ data });
+    return id ? "Car saved" : "Car added";
+  });
+}
+
+export async function setCarStatus(id: string, status: "BOOKED" | "OPTION"): Promise<ActionResult> {
+  return attempt(async () => {
+    await prisma.carRental.update({ where: { id }, data: { status } });
+  });
+}
+
+export async function deleteCar(id: string): Promise<ActionResult> {
+  return attempt(async () => {
+    await prisma.carRental.delete({ where: { id } });
+  });
+}
+
 async function nextDayOrder(dayValue: string): Promise<number> {
   const [idea, departing, arriving] = await Promise.all([
     prisma.idea.aggregate({ where: { day: dayValue }, _max: { dayOrder: true } }),

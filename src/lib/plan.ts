@@ -78,6 +78,7 @@ export type RouteSegment = {
   key: string;
   kind: "stay" | "transit" | "missing";
   city?: CityLike;
+  stayId?: string;
   from: string;
   nights: number;
 };
@@ -88,11 +89,12 @@ export function routeSegments<S extends StayLike, L extends LegLike>(
   const segments: RouteSegment[] = [];
   for (const state of states) {
     const city = state.kind === "stay" ? state.stay.city : undefined;
+    const stayId = state.kind === "stay" ? state.stay.id : undefined;
     const last = segments.at(-1);
     if (last && last.kind === state.kind && last.city?.id === city?.id) {
       last.nights += 1;
     } else {
-      segments.push({ key: state.night, kind: state.kind, city, from: state.night, nights: 1 });
+      segments.push({ key: state.night, kind: state.kind, city, stayId, from: state.night, nights: 1 });
     }
   }
   return segments;
@@ -112,6 +114,31 @@ export function citiesOnDay<S extends StayLike>(stays: S[], day: string, dayCiti
     if (!cities.some((other) => other.id === city.id)) cities.push(city);
   }
   return cities;
+}
+
+type CarLike = { id: string; status: "BOOKED" | "OPTION"; pickupDate: string; returnDate: string };
+
+export function carOn<C extends CarLike>(cars: C[], day: string): C | undefined {
+  const covering = cars.filter((car) => car.pickupDate <= day && day <= car.returnDate);
+  return covering.find((car) => car.status === "BOOKED") ?? covering[0];
+}
+
+export type CarDay = "BOOKED" | "OPTION";
+
+export function carDays(cars: CarLike[]): Map<string, CarDay> {
+  const days = new Map<string, CarDay>();
+  for (const car of cars) {
+    for (const day of eachDay(car.pickupDate, car.returnDate)) {
+      if (days.get(day) !== "BOOKED") days.set(day, car.status);
+    }
+  }
+  return days;
+}
+
+export const daysOfCar = (car: CarLike) => daysBetween(car.pickupDate, car.returnDate) + 1;
+
+export function newCarHref(from: string, to: string): string {
+  return `/bookings?${new URLSearchParams({ add: "car", from, to })}`;
 }
 
 export function newStayHref(checkIn: string, checkOut: string, city?: string): string {

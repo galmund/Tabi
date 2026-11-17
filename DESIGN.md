@@ -185,6 +185,7 @@ A Prussian shell on cool fog, with a ten-pigment city palette and three status p
 - **Fog** (fog): the page ground in day mode, and the sheet ground.
 - **Paper** (paper): cards, grouped lists, segmented thumbs.
 - **Paper Recess** (paper-recess) and **Paper Rule** (paper-rule): secondary raised fills and the in-transit route tile.
+- **Rental cars** use the Prussian accent: solid for booked, a dashed accent outline (chips, badges) or dimmed mark (route, day strip) for an option that is only planned.
 - **Sumi** (sumi): primary text. **Sumi Dim** (sumi-dim): secondary text, subtitles, trailing counts.
 - **Hairline**: line colour is sumi at 12% (day) or pale Prussian at 16% (night), always drawn at 0.5px.
 - **Fill**: pressed and tinted-button backgrounds use Prussian at 7.5% (day) or 13% (night).
@@ -282,7 +283,7 @@ Quiet, native and tactile.
 A 38x44 rectangle with a 1px rule and a second 1px rule offset 2px outside it, in the current text colour, holding a tabular day number over a tiny uppercase unit. Ink tone for ordinary days, Prussian Ink for today, vermilion for a night with no bed. Used only to identify a day: Days list rows and the "No hotel yet" rows on Home.
 
 ### Route Strip (signature)
-One tile per night in a 32px-tall row with 2px gaps and 3px corners. A stay tile is its city pigment at the top, fading by bokashi to a light tint at the bottom; an in-transit night is a neutral raised tile; an unprinted night is hatched vermilion at 80% opacity. A date range sits underneath in tabular 12px, and a hairline-separated legend lists each city with its swatch and night count.
+One tile per night in a 32px-tall row with 2px gaps and 3px corners. A stay tile is its city pigment at the top, fading by bokashi to a light tint at the bottom; an in-transit night is a neutral raised tile; an unprinted night is hatched vermilion at 80% opacity. On desktop (md and up) the strip is one tile per night; with a mouse, hovering a night shows a popover (date, day number, cities, where you sleep, car, plans, note), and clicking one night then another selects a range offering Add stay and Plan car; on touch, each run opens its booking or Add stay. A row of car marks sits under the tiles when any night has a rental: accent for booked, dimmed dim-ink for an option. Below md the strip becomes a Monday-first calendar: 48px day cells tinted about 20% with the night's city pigment over a 6px pigment band (hatched vermilion for no bed, neutral for transit, a flag on the last day), the car mark in the lower right, and a tapped day opening an inline panel with the same day details and actions. Tonight carries an ink outline. Below a hairline the stops read in order, joined by chevrons, and rental cars follow as chips (dashed outline for an option).
 
 ### Day Strip and Night Tiles
 - **Day tile:** 44x48, 8px corners, a 3px top band of the day's city pigments, a tiny "D#" label over the date number, a vermilion dot when that night has no bed. Active tile fills with Prussian Ink; today gets a 2px Prussian Ink ring.

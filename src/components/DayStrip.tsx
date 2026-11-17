@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Car } from "lucide-react";
 import { formatShortDay } from "@/lib/dates";
-import type { DayOption } from "@/lib/plan";
+import type { CarDay, DayOption } from "@/lib/plan";
 
 function band(colors: string[]): string | undefined {
   if (colors.length === 0) return undefined;
@@ -11,7 +12,17 @@ function band(colors: string[]): string | undefined {
   return `linear-gradient(90deg, ${colors.map((color, index) => `${color} ${index * step}% ${(index + 1) * step}%`).join(", ")})`;
 }
 
-export function DayStrip({ days, today, missing }: { days: DayOption[]; today: string; missing: string[] }) {
+export function DayStrip({
+  days,
+  today,
+  missing,
+  cars,
+}: {
+  days: DayOption[];
+  today: string;
+  missing: string[];
+  cars: Map<string, CarDay>;
+}) {
   const stripRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState<string | null>(null);
   const lockedUntil = useRef(0);
@@ -63,7 +74,7 @@ export function DayStrip({ days, today, missing }: { days: DayOption[]; today: s
               key={option.day}
               type="button"
               data-day={option.day}
-              aria-label={`Day ${option.number}, ${formatShortDay(option.day)}`}
+              aria-label={`Day ${option.number}, ${formatShortDay(option.day)}${cars.has(option.day) ? (cars.get(option.day) === "BOOKED" ? ", rental car booked" : ", rental car planned") : ""}`}
               aria-current={isActive ? "true" : undefined}
               onClick={() => {
                 lockedUntil.current = Date.now() + 800;
@@ -81,6 +92,15 @@ export function DayStrip({ days, today, missing }: { days: DayOption[]; today: s
                 D{option.number}
               </span>
               <span className="num mt-1 text-[17px] font-bold leading-none">{Number(option.day.slice(8))}</span>
+              {cars.has(option.day) ? (
+                <Car
+                  aria-hidden
+                  className={`absolute right-[3px] top-[5px] h-2.5 w-2.5 ${isActive ? "" : "text-accent"} ${
+                    cars.get(option.day) === "OPTION" ? "opacity-50" : ""
+                  }`}
+                  strokeWidth={2.6}
+                />
+              ) : null}
               {missing.includes(option.day) ? (
                 <span className="absolute bottom-1 h-1 w-1 rounded-full bg-bad" aria-label="No hotel" />
               ) : null}

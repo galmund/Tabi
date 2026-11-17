@@ -4,7 +4,7 @@ import type { Currency, Payment } from "@/generated/prisma/enums";
 import { GroupedList, SectionFooter, SectionHeader } from "@/components/ui";
 import { formatShortDay } from "@/lib/dates";
 import { CURRENCIES, formatMoney } from "@/lib/labels";
-import type { LegRow, StayRow } from "@/lib/trip";
+import type { CarRow, LegRow, StayRow } from "@/lib/trip";
 
 type Priced = {
   key: string;
@@ -18,7 +18,7 @@ type Priced = {
 
 type Totals = { currency: Currency; total: number; paid: number; deposit: number; open: number };
 
-function pricedItems(stays: StayRow[], legs: LegRow[]): Priced[] {
+function pricedItems(stays: StayRow[], legs: LegRow[], cars: CarRow[]): Priced[] {
   return [
     ...stays
       .filter((stay) => stay.status === "BOOKED" && stay.price !== null && stay.currency)
@@ -42,6 +42,17 @@ function pricedItems(stays: StayRow[], legs: LegRow[]): Priced[] {
         currency: leg.currency!,
         payment: leg.payment,
       })),
+    ...cars
+      .filter((car) => car.status === "BOOKED" && car.price !== null && car.currency)
+      .map((car) => ({
+        key: `car-${car.id}`,
+        href: `/bookings?car=${car.id}`,
+        title: `${car.company} car`,
+        day: car.pickupDate,
+        price: car.price!,
+        currency: car.currency!,
+        payment: car.payment,
+      })),
   ].sort((a, b) => a.day.localeCompare(b.day));
 }
 
@@ -57,15 +68,25 @@ function totalsOf(items: Priced[]): Totals[] {
   }).filter((totals) => totals.total > 0);
 }
 
-export function BudgetSection({ stays, legs, className }: { stays: StayRow[]; legs: LegRow[]; className?: string }) {
-  const items = pricedItems(stays, legs);
+export function BudgetSection({
+  stays,
+  legs,
+  cars,
+  className,
+}: {
+  stays: StayRow[];
+  legs: LegRow[];
+  cars: CarRow[];
+  className?: string;
+}) {
+  const items = pricedItems(stays, legs, cars);
   if (items.length === 0) return null;
   const totals = totalsOf(items);
   const toPay = items.filter((item) => item.payment !== "PAID");
 
   return (
     <section className={className}>
-      <SectionHeader title="Budget" trailing="Booked stays & travel" />
+      <SectionHeader title="Budget" trailing="Booked stays, travel & cars" />
       <div className="card space-y-4 px-4 py-4">
         {totals.map((row) => (
           <div key={row.currency}>

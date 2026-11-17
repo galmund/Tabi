@@ -173,6 +173,27 @@ model DayNote {
   text String
 }
 
+model CarRental {
+  id          String     @id @default(cuid())
+  status      StayStatus @default(BOOKED)
+  company     String
+  pickupDate  String
+  pickupTime  String?
+  pickupPlace String?
+  returnDate  String
+  returnTime  String?
+  returnPlace String?
+  bookingRef  String?
+  url         String?
+  price       Float?
+  currency    Currency?
+  payment     Payment?
+  notes       String?
+  createdAt   DateTime  @default(now())
+
+  @@index([pickupDate])
+}
+
 model DayCity {
   day       String
   cityId    String

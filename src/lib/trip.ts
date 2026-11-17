@@ -33,7 +33,7 @@ const paintRow = <T extends { city: { color: string } | null }>(row: T): T => ({
 });
 
 export const getTripData = cache(async () => {
-  const [trip, cities, stays, legs, ideas, todos, notes, wishes, dayCities] = await Promise.all([
+  const [trip, cities, stays, legs, ideas, todos, notes, wishes, dayCities, cars] = await Promise.all([
     getTrip(),
     prisma.city.findMany({ orderBy: { createdAt: "asc" } }),
     prisma.stay.findMany({
@@ -62,6 +62,7 @@ export const getTripData = cache(async () => {
       orderBy: [{ bought: "asc" }, { createdAt: "asc" }],
     }),
     prisma.dayCity.findMany({ include: { city: true }, orderBy: { createdAt: "asc" } }),
+    prisma.carRental.findMany({ orderBy: [{ pickupDate: "asc" }, { pickupTime: "asc" }, { createdAt: "asc" }] }),
   ]);
   return {
     trip,
@@ -73,6 +74,7 @@ export const getTripData = cache(async () => {
     notes,
     wishes: wishes.map(withSources).map(paintRow),
     dayCities: dayCities.map(paintRow),
+    cars,
   };
 });
 
@@ -84,6 +86,7 @@ export type LegRow = TripData["legs"][number];
 export type IdeaRow = TripData["ideas"][number];
 export type TodoRow = TripData["todos"][number];
 export type WishRow = TripData["wishes"][number];
+export type CarRow = TripData["cars"][number];
 
 export async function getServerToday(): Promise<string> {
   const store = await cookies();

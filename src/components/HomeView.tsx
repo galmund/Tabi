@@ -21,7 +21,7 @@ import { BudgetSection } from "@/components/Budget";
 import { NavBar } from "@/components/NavBar";
 import { PhotoStrip } from "@/components/PhotoViewer";
 import { CopyChip, CopyText, ideaMapsHref, legTransitHref, PinLink, stayDirectionsHref } from "@/components/quick";
-import { RouteBar } from "@/components/RouteBar";
+import { RouteBar, routeDays } from "@/components/RouteBar";
 import { Suggestions } from "@/components/Suggestions";
 import { IdeaSummary, LegSummary } from "@/components/rows";
 import { Card, CityTag, GroupedList, MapButtons, SectionHeader, StationMark, Tag } from "@/components/ui";
@@ -109,9 +109,16 @@ export function HomeView({ data, serverToday }: { data: TripData; serverToday: s
         {phase === "during" ? <TodaySection data={data} today={today} dayNumber={dayNumber} /> : null}
 
         <section className="lg:col-span-2">
-          <SectionHeader title="Route" trailing={`${covered}/${states.length} nights`} />
+          <SectionHeader title="Route" trailing={`${covered} of ${states.length} nights booked`} />
           <Card>
-            <RouteBar segments={routeSegments(states)} startDate={trip.startDate} endDate={trip.endDate} />
+            <RouteBar
+              segments={routeSegments(states)}
+              days={routeDays(trip, states, data)}
+              cars={data.cars}
+              startDate={trip.startDate}
+              endDate={trip.endDate}
+              today={phase === "during" ? today : undefined}
+            />
           </Card>
         </section>
 
@@ -190,7 +197,7 @@ export function HomeView({ data, serverToday }: { data: TripData; serverToday: s
           )}
         </section>
 
-        <BudgetSection stays={stays} legs={legs} className="lg:col-span-2" />
+        <BudgetSection stays={stays} legs={legs} cars={data.cars} className="lg:col-span-2" />
 
         <section className="lg:col-span-2">
           <SectionHeader title="At a glance" />

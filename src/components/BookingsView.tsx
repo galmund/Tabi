@@ -2,10 +2,10 @@
 
 import { useEffect, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { BedDouble, Plus, TrainFront } from "lucide-react";
-import { deleteStay, setStayStatus } from "@/app/actions";
-import { LegSheet, StaySheet, type StayDefaults } from "@/components/BookingSheets";
-import { EditButton, LegDetail, StayDetail } from "@/components/DetailSheets";
+import { BedDouble, Car, Plus, TrainFront } from "lucide-react";
+import { deleteStay, setCarStatus, setStayStatus } from "@/app/actions";
+import { CarSheet, LegSheet, StaySheet, type CarDefaults, type StayDefaults } from "@/components/BookingSheets";
+import { CarDetail, EditButton, LegDetail, StayDetail } from "@/components/DetailSheets";
 import { NavBar } from "@/components/NavBar";
 import { safely, useToast } from "@/components/Toast";
 import { CopyChip, CopyIcon } from "@/components/quick";
@@ -15,16 +15,23 @@ import { EmptyState, GroupedList, SectionFooter, SectionHeader, Tag } from "@/co
 import { daysBetween, formatDay, formatRange, plural } from "@/lib/dates";
 import { useToday } from "@/lib/device";
 import { formatMoney, PAYMENT_LABEL } from "@/lib/labels";
-import { isOutsideTrip, nightsOf, overlapsBooked, tripPhase } from "@/lib/plan";
-import type { LegRow, StayRow, TripData } from "@/lib/trip";
+import { daysOfCar, isOutsideTrip, nightsOf, overlapsBooked, tripPhase } from "@/lib/plan";
+import type { CarRow, LegRow, StayRow, TripData } from "@/lib/trip";
 
-type Tab = "stays" | "travel";
+type Tab = "stays" | "travel" | "car";
+
+const TAB_LABEL: Record<Tab, string> = { stays: "Stays", travel: "Travel", car: "Car" };
+const TAB_HREF: Record<Tab, string> = { stays: "/bookings", travel: "/bookings?tab=travel", car: "/bookings?tab=car" };
+type ViewKind = "view-stay" | "view-leg" | "view-car";
+const VIEW_TAB: Record<ViewKind, Tab> = { "view-stay": "stays", "view-leg": "travel", "view-car": "car" };
 
 type Editing =
   | { kind: "stay"; stay?: StayRow; defaults?: StayDefaults; fromDetail?: boolean }
   | { kind: "leg"; leg?: LegRow; fromDetail?: boolean }
   | { kind: "view-stay"; id: string }
   | { kind: "view-leg"; id: string }
+  | { kind: "car"; car?: CarRow; defaults?: CarDefaults; fromDetail?: boolean }
+  | { kind: "view-car"; id: string }
   | null;
 
 export function BookingsView({
@@ -32,29 +39,29 @@ export function BookingsView({
   serverToday,
   initialTab,
   initialStay,
+  initialCar,
   initialView,
 }: {
   data: TripData;
   serverToday: string;
   initialTab: Tab;
   initialStay: StayDefaults | null;
-  initialView: { kind: "view-stay" | "view-leg"; id: string } | null;
+  initialCar: CarDefaults | null;
+  initialView: { kind: ViewKind; id: string } | null;
 }) {
   const router = useRouter();
   const today = useToday(serverToday);
-  const { trip, stays, legs, cities } = data;
+  const { trip, stays, legs, cars, cities } = data;
   const [tab, setTab] = useState<Tab>(
-    initialStay || initialView?.kind === "view-stay" ? "stays" : initialView?.kind === "view-leg" ? "travel" : initialTab
+    initialStay ? "stays" : initialCar ? "car" : initialView ? VIEW_TAB[initialView.kind] : initialTab
   );
   const [editing, setEditing] = useState<Editing>(
-    initialStay ? { kind: "stay", defaults: initialStay } : initialView
+    initialStay ? { kind: "stay", defaults: initialStay } : initialCar ? { kind: "car", defaults: initialCar } : initialView
   );
 
   const close = () => {
     setEditing(null);
-    if (initialStay || initialView) {
-      router.replace(initialView?.kind === "view-leg" ? "/bookings?tab=travel" : "/bookings", { scroll: false });
-    }
+    if (initialStay || initialCar || initialView) router.replace(TAB_HREF[tab], { scroll: false });
   };
 
   const closeEditor = () => {
@@ -62,6 +69,8 @@ export function BookingsView({
       setEditing({ kind: "view-stay", id: editing.stay.id });
     } else if (editing?.kind === "leg" && editing.fromDetail && editing.leg) {
       setEditing({ kind: "view-leg", id: editing.leg.id });
+    } else if (editing?.kind === "car" && editing.fromDetail && editing.car) {
+      setEditing({ kind: "view-car", id: editing.car.id });
     } else {
       close();
     }
@@ -69,6 +78,7 @@ export function BookingsView({
 
   const viewingStay = editing?.kind === "view-stay" ? stays.find((stay) => stay.id === editing.id) : undefined;
   const viewingLeg = editing?.kind === "view-leg" ? legs.find((leg) => leg.id === editing.id) : undefined;
+  const viewingCar = editing?.kind === "view-car" ? cars.find((car) => car.id === editing.id) : undefined;
 
   const booked = stays.filter((stay) => stay.status === "BOOKED").length;
   const duringTrip = tripPhase(trip, today) === "during";
@@ -77,12 +87,18 @@ export function BookingsView({
     <>
       <NavBar
         title="Bookings"
-        subtitle={tab === "stays" ? `${booked} booked · ${plural(stays.length - booked, "option")}` : plural(legs.length, "journey")}
+        subtitle={
+          tab === "stays"
+            ? `${booked} booked · ${plural(stays.length - booked, "option")}`
+            : tab === "travel"
+              ? plural(legs.length, "journey")
+              : `${plural(cars.length, "rental")} · ${plural(cars.reduce((sum, car) => sum + daysOfCar(car), 0), "day")}`
+        }
         trailing={
           <button
             type="button"
-            aria-label={tab === "stays" ? "Add stay" : "Add travel"}
-            onClick={() => setEditing(tab === "stays" ? { kind: "stay" } : { kind: "leg" })}
+            aria-label={tab === "stays" ? "Add stay" : tab === "travel" ? "Add travel" : "Add car"}
+            onClick={() => setEditing(tab === "stays" ? { kind: "stay" } : tab === "travel" ? { kind: "leg" } : { kind: "car" })}
             className="pressable flex h-9 w-9 items-center justify-center rounded-full text-accent active:bg-fill"
           >
             <Plus className="h-6 w-6" strokeWidth={2.4} />
@@ -91,18 +107,18 @@ export function BookingsView({
       />
 
       <SegmentedTrack label="Bookings" className="mb-5">
-        {(["stays", "travel"] as const).map((value) => (
+        {(["stays", "travel", "car"] as const).map((value) => (
           <button
             key={value}
             type="button"
             aria-pressed={tab === value}
             onClick={() => {
               setTab(value);
-              window.history.replaceState(null, "", value === "stays" ? "/bookings" : "/bookings?tab=travel");
+              window.history.replaceState(null, "", TAB_HREF[value]);
             }}
             className={segmentClass(tab === value)}
           >
-            {value === "stays" ? "Stays" : "Travel"}
+            {TAB_LABEL[value]}
           </button>
         ))}
       </SegmentedTrack>
@@ -136,6 +152,29 @@ export function BookingsView({
                   Only booked stays count towards your nights. Options for the same nights fade once one is booked.
                 </SectionFooter>
               }
+            />
+          )
+        ) : tab === "car" ? (
+          cars.length === 0 ? (
+            <EmptyState
+              icon={<Car className="h-6 w-6" />}
+              title="No car yet"
+              hint="Rental cars with pick-up and return times and places. Their days show a car on the route and in Days."
+            />
+          ) : (
+            <PastSplit
+              items={cars}
+              isPast={(car) => duringTrip && car.returnDate < today}
+              inset={16 + 40 + 12}
+              render={(car) => (
+                <CarItem
+                  key={car.id}
+                  car={car}
+                  outside={isOutsideTrip(trip, car.pickupDate, car.returnDate)}
+                  onOpen={() => setEditing({ kind: "view-car", id: car.id })}
+                  onEdit={() => setEditing({ kind: "car", car })}
+                />
+              )}
             />
           )
         ) : legs.length === 0 ? (
@@ -194,6 +233,17 @@ export function BookingsView({
           stay={viewingStay}
           today={today}
           onEdit={() => setEditing({ kind: "stay", stay: viewingStay, fromDetail: true })}
+          onDone={close}
+        />
+      ) : null}
+      {editing?.kind === "car" ? (
+        <CarSheet key={editing.car?.id ?? "new"} car={editing.car} defaults={editing.defaults} onDone={closeEditor} />
+      ) : null}
+      {viewingCar ? (
+        <CarDetail
+          key={viewingCar.id}
+          car={viewingCar}
+          onEdit={() => setEditing({ kind: "car", car: viewingCar, fromDetail: true })}
           onDone={close}
         />
       ) : null}
@@ -400,6 +450,93 @@ function StayItem({
           ) : null}
           <EditButton label={`Edit ${stay.name}`} onClick={onEdit} />
         </div>
+      </div>
+    </li>
+  );
+}
+
+function CarItem({
+  car,
+  outside,
+  onOpen,
+  onEdit,
+}: {
+  car: CarRow;
+  outside: boolean;
+  onOpen: () => void;
+  onEdit: () => void;
+}) {
+  const days = daysOfCar(car);
+  const option = car.status === "OPTION";
+  const [pending, startTransition] = useTransition();
+  const toast = useToast();
+  const markBooked = () =>
+    startTransition(async () => {
+      const result = await safely(setCarStatus(car.id, "BOOKED"));
+      if (!result.ok) return toast({ message: result.error, tone: "bad" });
+      toast({
+        message: `${car.company} is booked`,
+        action: {
+          label: "Undo",
+          run: () =>
+            void safely(setCarStatus(car.id, "OPTION")).then((undo) => {
+              if (!undo.ok) toast({ message: undo.error, tone: "bad" });
+            }),
+        },
+      });
+    });
+  const places = [car.pickupPlace, car.returnPlace && car.returnPlace !== car.pickupPlace ? car.returnPlace : null]
+    .filter(Boolean)
+    .join(" → ");
+  return (
+    <li className={`flex ${pending ? "opacity-40" : ""}`}>
+      <span
+        aria-label={plural(days, "day")}
+        className={`relative my-3 ml-4 flex h-11 w-10 shrink-0 flex-col items-center justify-center overflow-hidden rounded-[6px] text-accent ${
+          option ? "border border-dashed border-accent/60" : "bg-accent/12"
+        }`}
+      >
+        <span className="num text-[16px] font-bold leading-none">{days}</span>
+        <span className="mt-0.5 text-[9px] font-semibold uppercase leading-none tracking-[0.06em]">
+          {days === 1 ? "day" : "days"}
+        </span>
+      </span>
+      <button type="button" onClick={onOpen} className="min-w-0 flex-1 py-3 pl-3 pr-2 text-left active:bg-fill">
+        <p className="flex items-center gap-2">
+          <span className="truncate text-[17px] font-semibold leading-tight">{car.company}</span>
+          {option ? <Tag>Option</Tag> : null}
+        </p>
+        <p className="tnum mt-0.5 text-[14px] text-dim">
+          {formatRange(car.pickupDate, car.returnDate)}
+          {car.pickupTime && car.returnTime
+            ? ` · ${car.pickupTime}–${car.returnTime}`
+            : car.pickupTime
+              ? ` · pick up ${car.pickupTime}`
+              : car.returnTime
+                ? ` · return ${car.returnTime}`
+                : ""}
+        </p>
+        {places ? <p className="mt-0.5 truncate text-[14px] text-dim">{places}</p> : null}
+        <MetaLine
+          bookingRef={car.bookingRef}
+          price={car.price}
+          currency={car.currency}
+          payment={car.payment}
+          outside={outside}
+        />
+      </button>
+      <div className="flex shrink-0 items-center gap-1 pr-2">
+        {option ? (
+          <button
+            type="button"
+            disabled={pending}
+            onClick={markBooked}
+            className="pressable hit-area h-8 rounded-full bg-accent/12 px-3 text-[14px] font-semibold text-accent hover:bg-accent/18"
+          >
+            Booked it
+          </button>
+        ) : null}
+        <EditButton label={`Edit ${car.company}`} onClick={onEdit} />
       </div>
     </li>
   );
