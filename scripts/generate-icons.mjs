@@ -28,30 +28,28 @@ function squirclePath(size, r) {
   ].join("");
 }
 
-const TORII = `
-    <path d="M140 286 Q512 226 884 286 L872 352 Q512 302 152 352 Z"/>
-    <rect x="214" y="352" width="596" height="44" rx="10"/>
-    <rect x="236" y="470" width="552" height="58" rx="12"/>
-    <rect x="484" y="396" width="56" height="74"/>
-    <path d="M302 396 H372 L384 812 H290 Z"/>
-    <path d="M652 396 H722 L734 812 H640 Z"/>`;
+const FIELD = "#eceff2";
+const VERMILION = "#c03a24";
 
-function iconSvg({ fullBleed }) {
+const TORII = `
+    <path d="M13 29 Q50 20 87 29 L85.5 37 Q50 30 14.5 37 Z"/>
+    <rect x="21" y="43" width="58" height="6.5" rx="1.5"/>
+    <rect x="47" y="37" width="6" height="6"/>
+    <path d="M29 37 H37 L38.5 84 H27.5 Z"/>
+    <path d="M63 37 H71 L72.5 84 H61.5 Z"/>`;
+
+function iconSvg({ fullBleed, inset = 1 }) {
   const shape = squirclePath(SIZE, RADIUS);
   const fill = fullBleed ? `<rect width="${SIZE}" height="${SIZE}"` : `<path d="${shape}"`;
-  const frame = fullBleed ? 200 : 170;
+  const scale = (SIZE / 100) * inset;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}">
-  ${fill} fill="#12294a"/>
-  <g fill="none" stroke="#ffffff" stroke-width="14">
-    <rect x="${frame}" y="${frame}" width="${SIZE - 2 * frame}" height="${SIZE - 2 * frame}" rx="6"/>
-    <rect x="${frame + 40}" y="${frame + 40}" width="${SIZE - 2 * frame - 80}" height="${SIZE - 2 * frame - 80}" rx="4"/>
-  </g>
-  <g fill="#ffffff" transform="translate(512 528) scale(0.6) translate(-512 -519)">${TORII}
+  ${fill} fill="${FIELD}"/>
+  <g fill="${VERMILION}" transform="translate(${SIZE / 2} ${SIZE / 2}) scale(${f(scale)}) translate(-50 -52)">${TORII}
   </g>${
     fullBleed
       ? ""
       : `
-  <path d="${shape}" fill="none" stroke="#fff" stroke-opacity="0.12" stroke-width="1" vector-effect="non-scaling-stroke"/>`
+  <path d="${shape}" fill="none" stroke="#12294a" stroke-opacity="0.12" stroke-width="1" vector-effect="non-scaling-stroke"/>`
   }
 </svg>
 `;
@@ -78,15 +76,16 @@ function ico(images) {
 }
 
 const rounded = iconSvg({ fullBleed: false });
-const bleed = iconSvg({ fullBleed: true });
+const maskable = iconSvg({ fullBleed: true, inset: 0.78 });
+const apple = iconSvg({ fullBleed: true, inset: 0.92 });
 
 const out = (name, data) => writeFile(PUBLIC + name, data);
 
 await out("icon.svg", rounded);
 await out("icon-192.png", await png(rounded, 192));
 await out("icon-512.png", await png(rounded, 512));
-await out("icon-maskable-512.png", await png(bleed, 512));
-await out("apple-touch-icon.png", await png(bleed, 180));
+await out("icon-maskable-512.png", await png(maskable, 512));
+await out("apple-touch-icon.png", await png(apple, 180));
 await out(
   "favicon.ico",
   ico(await Promise.all([16, 32, 48].map(async (size) => ({ size, data: await png(rounded, size) }))))

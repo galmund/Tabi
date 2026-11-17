@@ -169,7 +169,7 @@ A Prussian shell on cool fog, with a ten-pigment city palette and three status p
 
 ### Primary
 - **Prussian Sky** (prussian-sky): the sky band behind page titles, from the bar down to the bokashi fade.
-- **Prussian Deep** (prussian-deep): the top of the sky gradient, the collapsed header bar, the desktop rail, the browser theme colour and the app icon field.
+- **Prussian Deep** (prussian-deep): the top of the sky gradient, the collapsed header bar, the desktop rail and the browser theme colour. The app icon is the exception: a bold vermilion torii on a fog field, so it reads at home-screen size.
 - **Prussian Ink** (prussian-ink): the interactive accent on fog and paper: primary buttons, active tab, active day tile, checked checkboxes, date and amount values in forms, focus rings, caret. In night mode it becomes the pale **Night Prussian Ink** so it reads on dark panes.
 
 ### Secondary
@@ -194,7 +194,7 @@ A Prussian shell on cool fog, with a ten-pigment city palette and three status p
 
 **The Pigment Field Rule.** City colours are identity, not mood. One pigment per city, applied as a flat field, a dot, a 3px top band or a light tint; never as text colour at full strength and never on chrome.
 
-**The Shell Is Prussian Rule.** Header sky, collapsed bar, desktop rail, theme colour and icon are all Prussian. Content surfaces never take the sky colour.
+**The Shell Is Prussian Rule.** Header sky, collapsed bar, desktop rail and theme colour are all Prussian (the app icon is fog with a vermilion torii). Content surfaces never take the sky colour.
 
 ## Typography
 
