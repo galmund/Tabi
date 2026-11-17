@@ -1,11 +1,13 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
-import { Check, ChevronRight, Plus } from "lucide-react";
-import { deleteCity, saveCity, saveTrip, setAppearance } from "@/app/actions";
+import { useActionState, useState, useSyncExternalStore, useTransition } from "react";
+import { CalendarPlus, Check, ChevronRight, Plus } from "lucide-react";
+import { deleteCity, saveCity, saveTrip, setAppearance, type ActionResult } from "@/app/actions";
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { GroupLabel, InputRow, Section, SectionNote, TextRow } from "@/components/form";
 import { NavBar } from "@/components/NavBar";
+import { CopyChip } from "@/components/quick";
+import { safely } from "@/components/Toast";
 import { SegmentedTrack, segmentClass } from "@/components/Segmented";
 import { FormSheet } from "@/components/Sheet";
 import { CityDot, GroupedList, SectionFooter, SectionHeader } from "@/components/ui";
@@ -19,6 +21,37 @@ const APPEARANCES: [ThemeChoice, string][] = [
   ["dark", "Dark"],
 ];
 
+const noSubscribe = () => () => {};
+
+function CalendarSection() {
+  const host = useSyncExternalStore(noSubscribe, () => window.location.host, () => "");
+  const feed = host ? `${window.location.protocol}//${host}/calendar.ics` : "";
+  const webcal = host ? `webcal://${host}/calendar.ics` : "";
+
+  return (
+    <section>
+      <GroupLabel>Calendar</GroupLabel>
+      <GroupedList>
+        <li>
+          <a href={webcal || undefined} className="flex items-center gap-3 px-4 py-3 text-accent active:bg-fill">
+            <CalendarPlus className="h-5 w-5 shrink-0" />
+            <span className="min-w-0 flex-1 text-[17px]">Subscribe in Calendar</span>
+            <ChevronRight className="h-5 w-5 shrink-0 text-faint" />
+          </a>
+        </li>
+        <li className="flex items-center gap-3 px-4 py-3">
+          <span className="shrink-0 text-[17px]">Feed link</span>
+          <span className="flex min-w-0 flex-1 justify-end">{feed ? <CopyChip value={feed} /> : null}</span>
+        </li>
+      </GroupedList>
+      <SectionFooter>
+        Stays, travel, planned activities, free-cancellation deadlines and due to-dos, at the times on the ticket. Your
+        calendar refreshes it on its own; anyone with the link can see it.
+      </SectionFooter>
+    </section>
+  );
+}
+
 function applyTheme(choice: ThemeChoice) {
   const root = document.documentElement;
   if (choice === "auto") root.removeAttribute("data-theme");
@@ -27,7 +60,10 @@ function applyTheme(choice: ThemeChoice) {
 
 export function SettingsView({ data, theme }: { data: TripData; theme: ThemeChoice }) {
   const { trip, cities, stays, ideas } = data;
-  const [state, formAction, pending] = useActionState(saveTrip, null);
+  const [state, formAction, pending] = useActionState(
+    (previous: ActionResult | null, form: FormData) => safely(saveTrip(previous, form)),
+    null
+  );
   const [appearance, setLocalAppearance] = useState(theme);
   const [, startTransition] = useTransition();
   const [editingCity, setEditingCity] = useState<CityRow | "new" | null>(null);
@@ -36,7 +72,7 @@ export function SettingsView({ data, theme }: { data: TripData; theme: ThemeChoi
     setLocalAppearance(choice);
     applyTheme(choice);
     startTransition(async () => {
-      await setAppearance(choice);
+      await setAppearance(choice).catch(() => {});
     });
   };
 
@@ -91,6 +127,8 @@ export function SettingsView({ data, theme }: { data: TripData; theme: ThemeChoi
           </SegmentedTrack>
           <SectionFooter>Automatic follows your phone’s light and dark mode.</SectionFooter>
         </section>
+
+        <CalendarSection />
 
         <section>
           <SectionHeader

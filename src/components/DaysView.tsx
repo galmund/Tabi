@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { BedDouble, Plane, Plus, StickyNote } from "lucide-react";
-import { addDayCity, arrangeDay, saveDayNote, scheduleIdea, setDayCity } from "@/app/actions";
+import { AlertTriangle, BedDouble, LogIn, LogOut, Plane, Plus, StickyNote } from "lucide-react";
+import { addDayCity, arrangeDay, scheduleIdea, setDayCity } from "@/app/actions";
 import { useActivityDrag } from "@/components/ActivityDrag";
 import { LegSheet } from "@/components/BookingSheets";
 import { EditButton, IdeaDetail, LegDetail } from "@/components/DetailSheets";
@@ -15,10 +15,21 @@ import { Suggestions } from "@/components/Suggestions";
 import { IdeaSummary, LegSummary } from "@/components/rows";
 import { FormGroup, GroupLabel } from "@/components/form";
 import { Sheet } from "@/components/Sheet";
+import { saveOrQueue } from "@/components/QueueSync";
+import { safely, useToast } from "@/components/Toast";
+import { useQueuedValue } from "@/lib/queue";
 import { CityDot, CityTag, StationMark, Tag } from "@/components/ui";
 import { addDays, daysBetween, formatDay, formatRange, plural } from "@/lib/dates";
 import { useToday } from "@/lib/device";
-import { bookedStayOn, dayOptions, nightStates, overnightLegOn, type DayOption } from "@/lib/plan";
+import {
+  bookedStayOn,
+  dayOptions,
+  newStayHref,
+  nightStates,
+  overnightLegOn,
+  timeClashes,
+  type DayOption,
+} from "@/lib/plan";
 import type { CityRow, IdeaRow, LegRow, TripData } from "@/lib/trip";
 
 type Editing =
@@ -49,6 +60,7 @@ export function DaysView({ data, serverToday }: { data: TripData; serverToday: s
     .map((state) => state.night);
   const [editing, setEditing] = useState<Editing>(null);
   const [, startTransition] = useTransition();
+  const toast = useToast();
 
   const drag = useActivityDrag({
     days: days.map((option) => option.day),
@@ -86,7 +98,11 @@ export function DaysView({ data, serverToday }: { data: TripData; serverToday: s
         );
       setArranged({ key: serverKey, ideas: nextIdeas, legs: nextLegs });
       startTransition(async () => {
-        await arrangeDay(day, keys, moved, fromDay);
+        const result = await safely(arrangeDay(day, keys, moved, fromDay));
+        if (!result.ok) {
+          setArranged(null);
+          toast({ message: result.error, tone: "bad" });
+        }
       });
     },
     renderGhost: (key) => {
@@ -122,6 +138,8 @@ export function DaysView({ data, serverToday }: { data: TripData; serverToday: s
             items={dayItems(option.day, ideas, legs)}
             note={notes.find((entry) => entry.day === option.day)?.text ?? ""}
             stay={bookedStayOn(stays, option.day)}
+            leaving={stays.find((stay) => stay.status === "BOOKED" && stay.checkOut === option.day)}
+            clashes={timeClashes(option.day, ideas, legs)}
             transit={overnightLegOn(legs, option.day)}
             allIdeas={ideas}
             onEdit={setEditing}
@@ -223,6 +241,8 @@ function DayCard({
   items,
   note,
   stay,
+  leaving,
+  clashes,
   transit,
   allIdeas,
   onEdit,
@@ -234,6 +254,8 @@ function DayCard({
   items: DayItem[];
   note: string;
   stay: TripData["stays"][number] | undefined;
+  leaving: TripData["stays"][number] | undefined;
+  clashes: Map<string, string>;
   transit: LegRow | undefined;
   allIdeas: IdeaRow[];
   onEdit: (editing: Editing) => void;
@@ -287,6 +309,14 @@ function DayCard({
         </button>
       </header>
 
+      {leaving && leaving.id !== stay?.id ? (
+        <StayMoment
+          icon={<LogOut className="h-4 w-4" />}
+          label={`Check out of ${leaving.name}`}
+          time={`by ${leaving.checkOutTime}`}
+          edge={items.length > 0 ? "bottom" : undefined}
+        />
+      ) : null}
       <div ref={drag.anchorRef(option.day)} />
       {items.length > 0 ? (
         <ul className="separated">
@@ -323,7 +353,18 @@ function DayCard({
                     onClick={() => onEdit({ kind: "view-idea", id: item.idea.id })}
                     className="flex min-w-0 flex-1 items-center py-1 text-left"
                   >
-                    <IdeaSummary idea={item.idea} />
+                    <IdeaSummary
+                      idea={item.idea}
+                      copy
+                      trailing={
+                        clashes.has(item.idea.id) ? (
+                          <span className="flex min-w-0 items-center gap-1 text-orange">
+                            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">{clashes.get(item.idea.id)}</span>
+                          </span>
+                        ) : null
+                      }
+                    />
                   </button>
                   <PinLink href={ideaMapsHref(item.idea)} label={`Open ${item.idea.name} in Google Maps`} />
                   <EditButton label={`Edit ${item.idea.name}`} onClick={() => onEdit({ kind: "idea", idea: item.idea })} />
@@ -332,6 +373,15 @@ function DayCard({
             </li>
           ))}
         </ul>
+      ) : null}
+
+      {stay && stay.checkIn === option.day ? (
+        <StayMoment
+          icon={<LogIn className="h-4 w-4" />}
+          label={`Check in to ${stay.name}`}
+          time={`from ${stay.checkInTime}`}
+          edge={items.length > 0 || (leaving && leaving.id !== stay.id) ? "top" : undefined}
+        />
       ) : null}
 
       {!hasActivities && option.cities.length > 0 ? (
@@ -349,7 +399,7 @@ function DayCard({
         <button
           type="button"
           onClick={() => onEdit({ kind: "add", day: option })}
-          className="pressable flex h-8 items-center gap-1 rounded-full bg-accent/12 px-3 text-[14px] font-semibold text-accent hover:bg-accent/18"
+          className="pressable hit-area flex h-8 items-center gap-1 rounded-full bg-accent/12 px-3 text-[14px] font-semibold text-accent hover:bg-accent/18"
         >
           <Plus className="h-4 w-4" strokeWidth={2.6} />
           Activity
@@ -357,26 +407,49 @@ function DayCard({
         <button
           type="button"
           onClick={() => onEdit({ kind: "new-leg", day: option.day })}
-          className="pressable flex h-8 items-center gap-1 rounded-full bg-fill px-3 text-[14px] font-semibold text-accent hover:bg-accent/12"
+          className="pressable hit-area flex h-8 items-center gap-1 rounded-full bg-fill px-3 text-[14px] font-semibold text-accent hover:bg-accent/12"
         >
           <Plus className="h-4 w-4" strokeWidth={2.6} />
           Travel
         </button>
         <div className="min-w-0 flex-1 text-right text-[14px]">
-          <SleepLine day={option.day} isLast={isLast} stay={stay} transit={transit} />
+          <SleepLine day={option.day} city={option.cities.at(-1)?.name} isLast={isLast} stay={stay} transit={transit} />
         </div>
       </div>
     </section>
   );
 }
 
+function StayMoment({
+  icon,
+  label,
+  time,
+  edge,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  time: string;
+  edge?: "top" | "bottom";
+}) {
+  const border = edge === "top" ? "border-t-[0.5px] border-line" : edge === "bottom" ? "border-b-[0.5px] border-line" : "";
+  return (
+    <p className={`flex items-center gap-2.5 px-4 py-2 text-[15px] text-dim ${border}`}>
+      <span className="flex w-5 shrink-0 justify-center">{icon}</span>
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      <span className="tnum shrink-0 font-semibold text-ink">{time}</span>
+    </p>
+  );
+}
+
 function SleepLine({
   day,
+  city,
   isLast,
   stay,
   transit,
 }: {
   day: string;
+  city?: string;
   isLast: boolean;
   stay: TripData["stays"][number] | undefined;
   transit: LegRow | undefined;
@@ -391,7 +464,7 @@ function SleepLine({
   }
   if (stay) {
     return (
-      <Link href="/bookings" className="inline-flex max-w-full items-center gap-1.5 text-dim">
+      <Link href={`/bookings?stay=${stay.id}`} className="inline-flex max-w-full items-center gap-1.5 text-dim">
         <BedDouble className="h-4 w-4 shrink-0" />
         <span className="truncate text-ink">{stay.name}</span>
         <CityDot color={stay.city.color} className="h-2 w-2" />
@@ -408,7 +481,7 @@ function SleepLine({
   }
   return (
     <Link
-      href={`/bookings?add=stay&from=${day}&to=${addDays(day, 1)}`}
+      href={newStayHref(day, addDays(day, 1), city)}
       className="inline-flex items-center gap-1.5 whitespace-nowrap font-semibold text-bad"
     >
       <BedDouble className="h-4 w-4 shrink-0" />
@@ -417,11 +490,14 @@ function SleepLine({
   );
 }
 
-function DayNote({ day, initial }: { day: string; initial: string }) {
+function DayNote({ day, initial: saved }: { day: string; initial: string }) {
+  const queued = useQueuedValue<string>(`note:${day}`);
+  const initial = queued ?? saved;
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(initial);
   const [synced, setSynced] = useState(initial);
   const [pending, startTransition] = useTransition();
+  const toast = useToast();
 
   if (synced !== initial && !editing) {
     setSynced(initial);
@@ -432,7 +508,14 @@ function DayNote({ day, initial }: { day: string; initial: string }) {
     setEditing(false);
     if (value.trim() === initial.trim()) return;
     startTransition(async () => {
-      await saveDayNote(day, value);
+      const result = await saveOrQueue({ key: `note:${day}`, action: "dayNote", args: [day, value] });
+      if (!result.ok) {
+        toast({
+          message: result.error,
+          tone: "bad",
+          action: { label: "Edit", run: () => setEditing(true) },
+        });
+      }
     });
   };
 
@@ -488,14 +571,16 @@ function AddActivitySheet({
   onDone: () => void;
 }) {
   const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
   const cityIds = option.cities.map((city) => city.id);
   const suggested = ideas.filter((idea) => idea.cityId && cityIds.includes(idea.cityId));
   const others = ideas.filter((idea) => !suggested.includes(idea));
 
   const add = (idea: IdeaRow, close: () => void) =>
     startTransition(async () => {
-      const result = await scheduleIdea(idea.id, option.day);
+      const result = await safely(scheduleIdea(idea.id, option.day));
       if (result.ok) close();
+      else setError(result.error);
     });
 
   const list = (label: string, items: IdeaRow[], close: () => void) =>
@@ -536,6 +621,7 @@ function AddActivitySheet({
             </span>
             New activity
           </button>
+          {error ? <p className="rounded-[12px] bg-bad/15 px-4 py-3 text-[15px] text-bad">{error}</p> : null}
           {ideas.length === 0 ? (
             <p className="px-4 text-[15px] text-dim">
               Every idea is already on a day. Add more on the Ideas tab, or create one here.
@@ -578,8 +664,11 @@ function DayCitiesSheet({
     setOverrides((current) => ({ ...current, [id]: on }));
     setError(null);
     startTransition(async () => {
-      const result = await setDayCity(option.day, id, on);
-      if (!result.ok) setError(result.error);
+      const result = await safely(setDayCity(option.day, id, on));
+      if (!result.ok) {
+        setOverrides((current) => ({ ...current, [id]: !on }));
+        setError(result.error);
+      }
     });
   };
 
@@ -588,7 +677,7 @@ function DayCitiesSheet({
     if (!trimmed) return;
     setError(null);
     startTransition(async () => {
-      const result = await addDayCity(option.day, trimmed);
+      const result = await safely(addDayCity(option.day, trimmed));
       if (result.ok) setName("");
       else setError(result.error);
     });

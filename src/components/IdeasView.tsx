@@ -1,18 +1,21 @@
 "use client";
 
 import { useState, useTransition, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { CalendarCheck, CalendarPlus, Lightbulb, Plus, Star, Ticket } from "lucide-react";
 import { moveIdea } from "@/app/actions";
 import { useActivityDrag } from "@/components/ActivityDrag";
 import { EditButton, IdeaDetail } from "@/components/DetailSheets";
 import { DayPickerSheet, IdeaSheet } from "@/components/IdeaSheets";
 import { NavBar } from "@/components/NavBar";
+import { CopyIcon } from "@/components/quick";
+import { safely, useToast } from "@/components/Toast";
 import { IDEA_ICON } from "@/components/icons";
 import { IdeaSummary, Thumb } from "@/components/rows";
 import { CityDot, EmptyState, GroupedList, IconCircle, SectionHeader, Tag } from "@/components/ui";
 import { formatDay, formatShortDay, plural } from "@/lib/dates";
 import { IDEA_KIND_COLOR, IDEA_KIND_LABEL } from "@/lib/labels";
-import { dayOptions } from "@/lib/plan";
+import { dayOptions, type DayOption } from "@/lib/plan";
 import type { CityRow, IdeaRow, TripData } from "@/lib/trip";
 
 type Editing =
@@ -25,14 +28,20 @@ type Editing =
 const ALL = "all";
 const NO_CITY = "none";
 
-export function IdeasView({ data }: { data: TripData }) {
+export function IdeasView({ data, initialIdeaId }: { data: TripData; initialIdeaId?: string }) {
+  const router = useRouter();
   const { trip, stays, cities, dayCities } = data;
   const serverKey = data.ideas.map((idea) => `${idea.id}:${idea.cityId}:${idea.cityOrder}`).join(",");
   const [moved, setMoved] = useState<{ key: string; ideas: IdeaRow[] } | null>(null);
   const ideas = moved?.key === serverKey ? moved.ideas : data.ideas;
   const [filter, setFilter] = useState<string>(ALL);
-  const [editing, setEditing] = useState<Editing>(null);
+  const [editing, setEditing] = useState<Editing>(initialIdeaId ? { kind: "view", id: initialIdeaId } : null);
+  const closeLinked = () => {
+    setEditing(null);
+    if (initialIdeaId) router.replace("/ideas", { scroll: false });
+  };
   const [, startTransition] = useTransition();
+  const toast = useToast();
   const days = dayOptions(trip, stays, ideas, dayCities);
 
   const groups: { key: string; city: CityRow | null; ideas: IdeaRow[] }[] = [
@@ -54,7 +63,11 @@ export function IdeasView({ data }: { data: TripData }) {
         .map((idea) => ((idea.cityId ?? NO_CITY) === key ? { ...idea, cityOrder: ids.indexOf(idea.id) } : idea));
       setMoved({ key: serverKey, ideas: next });
       startTransition(async () => {
-        await moveIdea(id, cityId, ids);
+        const result = await safely(moveIdea(id, cityId, ids));
+        if (!result.ok) {
+          setMoved(null);
+          toast({ message: result.error, tone: "bad" });
+        }
       });
     },
   };
@@ -152,6 +165,7 @@ export function IdeasView({ data }: { data: TripData }) {
                     </>
                   }
                 />
+                {group.city ? <MustDoNudge city={group.city} ideas={group.ideas} days={days} onPlan={(idea) => setEditing({ kind: "schedule", idea })} /> : null}
                 <div
                   ref={listDrag.dayRef(group.key)}
                   className={`rounded-card transition-shadow duration-150 lg:hidden ${
@@ -218,7 +232,8 @@ export function IdeasView({ data }: { data: TripData }) {
           key={viewing.id}
           idea={viewing}
           onEdit={() => setEditing({ kind: "edit", idea: viewing, fromDetail: true })}
-          onDone={() => setEditing(null)}
+          onMove={() => setEditing({ kind: "schedule", idea: viewing })}
+          onDone={closeLinked}
         />
       ) : null}
       {editing?.kind === "new" ? (
@@ -257,6 +272,7 @@ function IdeaListRow({ idea, onView, onSchedule, onEdit, rowRef, dragging, handl
       <button type="button" onClick={onView} className="flex min-w-0 flex-1 items-center py-1 text-left">
         <IdeaSummary
           idea={idea}
+          copy
           trailing={
             idea.needsBooking ? (
               <span className="flex items-center gap-1 text-orange">
@@ -289,7 +305,7 @@ function IdeaCard({ idea, onView, onSchedule, onEdit, rowRef, dragging, handle }
         className="absolute inset-0 rounded-card focus-visible:outline-2 focus-visible:outline-accent"
       />
       <div className="flex items-start gap-2">
-        <IdeaCardHeading idea={idea} />
+        <IdeaCardHeading idea={idea} copy />
         <div className="relative -mr-2 -mt-2 flex transition-opacity [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-focus-within:opacity-100 [@media(hover:hover)]:group-hover:opacity-100">
           {handle}
           <EditButton label={`Edit ${idea.name}`} onClick={onEdit} />
@@ -314,7 +330,7 @@ function IdeaCard({ idea, onView, onSchedule, onEdit, rowRef, dragging, handle }
   );
 }
 
-function IdeaCardHeading({ idea }: { idea: IdeaRow }) {
+function IdeaCardHeading({ idea, copy = false }: { idea: IdeaRow; copy?: boolean }) {
   const Icon = IDEA_ICON[idea.kind];
   const color = IDEA_KIND_COLOR[idea.kind];
   const cover = idea.photos[0];
@@ -330,6 +346,7 @@ function IdeaCardHeading({ idea }: { idea: IdeaRow }) {
       <div className="min-w-0 flex-1">
         <h3 dir="auto" className="line-clamp-2 text-left text-[17px] font-semibold leading-snug">
           {idea.name}
+          {copy ? <CopyIcon value={idea.name} className="relative z-[1] -my-1 ml-0.5 align-middle" /> : null}
         </h3>
         <p
           className="mt-0.5 flex items-center gap-1.5 text-[13px] font-medium"
@@ -366,7 +383,7 @@ function DayButton({
       type="button"
       onClick={onClick}
       aria-label={idea.day ? `Planned for ${formatDay(idea.day)}, change day` : "Add to a day"}
-      className={`pressable flex h-8 shrink-0 items-center justify-center gap-1 rounded-full text-[13px] font-semibold ${
+      className={`pressable hit-area flex h-8 shrink-0 items-center justify-center gap-1 rounded-full text-[13px] font-semibold ${
         compact && !idea.day ? "w-8" : "px-2.5"
       } ${
         idea.day ? "bg-fill text-ink" : quiet ? "text-accent hover:bg-accent/10" : "bg-accent/12 text-accent hover:bg-accent/18"
@@ -384,6 +401,46 @@ function DayButton({
         </>
       )}
     </button>
+  );
+}
+
+function MustDoNudge({
+  city,
+  ideas,
+  days,
+  onPlan,
+}: {
+  city: CityRow;
+  ideas: IdeaRow[];
+  days: DayOption[];
+  onPlan: (idea: IdeaRow) => void;
+}) {
+  const waiting = ideas.filter((idea) => idea.priority === "MUST" && !idea.day);
+  if (waiting.length === 0) return null;
+  const cityDays = days.filter((day) => day.cities.some((other) => other.id === city.id));
+  const free = cityDays.filter((day) => day.planned === 0).length;
+  const short = cityDays.length === 0 || waiting.length > free;
+  const where =
+    cityDays.length === 0
+      ? `no days in ${city.name} yet`
+      : free === 0
+        ? `every ${city.name} day has plans`
+        : `${plural(free, "free day")} in ${city.name}`;
+
+  return (
+    <div className="-mt-1 mb-3 flex items-center gap-2 px-1 text-[14px]">
+      <Star className={`h-3.5 w-3.5 shrink-0 fill-current ${short ? "text-orange" : "text-yellow"}`} />
+      <span className={`min-w-0 flex-1 ${short ? "text-orange" : "text-dim"}`}>
+        {plural(waiting.length, "must-do")} not on a day · {where}
+      </span>
+      <button
+        type="button"
+        onClick={() => onPlan(waiting[0])}
+        className="press-fade shrink-0 font-semibold text-accent"
+      >
+        Plan {waiting.length > 1 ? "next" : "it"}
+      </button>
+    </div>
   );
 }
 
@@ -412,7 +469,7 @@ function FilterChip({
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`pressable flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[14px] font-semibold ${
+      className={`pressable hit-area flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[14px] font-semibold ${
         active ? "bg-accent text-on-accent shadow-[var(--shadow-thumb)]" : "bg-elev text-dim shadow-[var(--shadow-card)] hover:text-ink"
       }`}
     >

@@ -1,11 +1,13 @@
 "use client";
 
-import { useActionState, useEffect, useRef, type ReactNode } from "react";
+import { useActionState, useEffect, useRef, useState, type ReactNode } from "react";
 import type { ActionResult } from "@/app/actions";
+import { safely, useToast } from "@/components/Toast";
 import { useDragDismiss } from "@/lib/useDragDismiss";
 
-function useSheetDialog(onDone: () => void) {
+function useSheetDialog(onDone: () => void, isDirty?: () => boolean) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     dialogRef.current?.showModal();
@@ -16,11 +18,22 @@ function useSheetDialog(onDone: () => void) {
     };
   }, []);
 
-  const dismiss = () => dialogRef.current?.close();
+  const close = () => dialogRef.current?.close();
+
+  const allowDismiss = () => {
+    if (!isDirty?.()) return true;
+    setConfirming(true);
+    return false;
+  };
+
+  const dismiss = () => {
+    if (allowDismiss()) close();
+  };
 
   const { handlers } = useDragDismiss({
     target: dialogRef,
-    onDismiss: dismiss,
+    onDismiss: close,
+    canDismiss: allowDismiss,
     onProgress: (progress) => dialogRef.current?.style.setProperty("--drag", String(progress)),
   });
 
@@ -28,12 +41,55 @@ function useSheetDialog(onDone: () => void) {
     ref: dialogRef,
     className: "sheet",
     onClose: () => setTimeout(onDone, 300),
+    onCancel: (event: React.SyntheticEvent) => {
+      if (!allowDismiss()) event.preventDefault();
+    },
     onClick: (event: React.MouseEvent) => {
       if (event.target === dialogRef.current) dismiss();
     },
   };
 
-  return { dialogRef, dismiss, dragHandlers: handlers, dialogProps };
+  return { dialogRef, close, dismiss, confirming, setConfirming, dragHandlers: handlers, dialogProps };
+}
+
+function DiscardPrompt({ onDiscard, onKeep }: { onDiscard: () => void; onKeep: () => void }) {
+  return (
+    <div className="fade-in absolute inset-0 z-10 flex items-end bg-black/35 p-3" onClick={onKeep}>
+      <div
+        role="alertdialog"
+        aria-label="Discard changes?"
+        className="rise-in w-full space-y-2"
+        style={{ paddingBottom: "var(--safe-bottom)" }}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="overflow-hidden rounded-[14px] bg-elev2 text-center">
+          <p className="px-4 pb-2 pt-3.5 text-[13px] text-dim">You have changes that aren’t saved yet.</p>
+          <button
+            type="button"
+            autoFocus
+            onClick={onDiscard}
+            className="h-14 w-full border-t border-line text-[18px] text-bad active:bg-fill"
+          >
+            Discard Changes
+          </button>
+        </div>
+        <button
+          type="button"
+          onClick={onKeep}
+          className="h-14 w-full rounded-[14px] bg-elev2 text-[18px] font-semibold text-accent active:bg-fill"
+        >
+          Keep Editing
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function snapshot(form: HTMLFormElement | null): string {
+  if (!form) return "";
+  return JSON.stringify(
+    [...new FormData(form).entries()].map(([key, value]) => [key, typeof value === "string" ? value : `${value.name}:${value.size}`])
+  );
 }
 
 function SheetHeader({
@@ -94,16 +150,32 @@ export function FormSheet({
   children: ReactNode;
   footer?: (close: () => void) => ReactNode;
 }) {
-  const { dialogRef, dismiss, dragHandlers, dialogProps } = useSheetDialog(onDone);
-  const [state, formAction, pending] = useActionState(action, null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const initial = useRef<string | null>(null);
+  const { dialogRef, close, dismiss, confirming, setConfirming, dragHandlers, dialogProps } = useSheetDialog(
+    onDone,
+    () => initial.current !== null && snapshot(formRef.current) !== initial.current
+  );
+  const [state, formAction, pending] = useActionState(
+    (previous: ActionResult | null, form: FormData) => safely(action(previous, form)),
+    null
+  );
 
   useEffect(() => {
-    if (state?.ok) dialogRef.current?.close();
-  }, [state, dialogRef]);
+    initial.current = snapshot(formRef.current);
+  }, []);
+
+  const toast = useToast();
+
+  useEffect(() => {
+    if (!state?.ok) return;
+    dialogRef.current?.close();
+    if (state.warning) toast({ message: state.warning, tone: "warn" });
+  }, [state, dialogRef, toast]);
 
   return (
     <dialog {...dialogProps} aria-label={title}>
-      <form action={formAction} className="flex min-h-0 flex-col">
+      <form ref={formRef} action={formAction} className="flex min-h-0 flex-col">
         <SheetHeader
           dragHandlers={dragHandlers}
           title={title}
@@ -125,9 +197,10 @@ export function FormSheet({
               {state.error}
             </p>
           ) : null}
-          {footer?.(dismiss)}
+          {footer?.(close)}
         </SheetBody>
       </form>
+      {confirming ? <DiscardPrompt onDiscard={close} onKeep={() => setConfirming(false)} /> : null}
     </dialog>
   );
 }

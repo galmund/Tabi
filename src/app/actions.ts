@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
-import { addDays, daysBetween, isClock, isIsoDay, normalizeClock } from "@/lib/dates";
+import { addDays, daysBetween, formatShortDay, isClock, isIsoDay, normalizeClock, plural } from "@/lib/dates";
 import {
   CITY_COLORS,
   isCurrency,
@@ -16,7 +16,7 @@ import {
 import { THEME_COOKIE, TIME_ZONE_COOKIE, type ThemeChoice } from "@/lib/cookies";
 import { photoSrc, TRIP_ID } from "@/lib/trip";
 
-export type ActionResult = { ok: true; message?: string } | { ok: false; error: string };
+export type ActionResult = { ok: true; message?: string; warning?: string } | { ok: false; error: string };
 
 const YEAR_IN_SECONDS = 60 * 60 * 24 * 365;
 
@@ -26,11 +26,14 @@ function refresh() {
   revalidatePath("/", "layout");
 }
 
-async function attempt(work: () => Promise<string | void>): Promise<ActionResult> {
+async function attempt(
+  work: () => Promise<string | void | { message?: string; warning?: string }>
+): Promise<ActionResult> {
   try {
-    const message = await work();
+    const outcome = await work();
     refresh();
-    return message ? { ok: true, message } : { ok: true };
+    if (!outcome) return { ok: true };
+    return typeof outcome === "string" ? { ok: true, message: outcome } : { ok: true, ...outcome };
   } catch (error) {
     if (error instanceof InvalidInput) return { ok: false, error: error.message };
     throw error;
@@ -205,9 +208,31 @@ export async function saveStay(_: ActionResult | null, form: FormData): Promise<
       ...money(form),
     };
 
-    if (id) await prisma.stay.update({ where: { id }, data });
-    else await prisma.stay.create({ data: { ...data, ...(await newPhotos(form)) } });
-    return id ? "Stay saved" : "Stay added";
+    const saved = id
+      ? await prisma.stay.update({ where: { id }, data, select: { id: true } })
+      : await prisma.stay.create({ data: { ...data, ...(await newPhotos(form)) }, select: { id: true } });
+
+    const clash =
+      data.status === "BOOKED"
+        ? await prisma.stay.findFirst({
+            where: {
+              status: "BOOKED",
+              checkIn: { lt: checkOut },
+              checkOut: { gt: checkIn },
+              id: { not: saved.id },
+            },
+            orderBy: { checkIn: "asc" },
+            select: { name: true, checkIn: true, checkOut: true },
+          })
+        : null;
+    const message = id ? "Stay saved" : "Stay added";
+    if (!clash) return message;
+    const from = clash.checkIn > checkIn ? clash.checkIn : checkIn;
+    const nights = daysBetween(from, clash.checkOut < checkOut ? clash.checkOut : checkOut);
+    return {
+      message,
+      warning: `Overlaps ${clash.name} for ${plural(nights, "night")} from ${formatShortDay(from)} — check the dates.`,
+    };
   });
 }
 

@@ -18,6 +18,7 @@ import {
 import { IDEA_ICON } from "@/components/icons";
 import { PhotosField } from "@/components/PhotosField";
 import { FormSheet, Sheet } from "@/components/Sheet";
+import { safely } from "@/components/Toast";
 import { CityDot, MapButtons } from "@/components/ui";
 import { formatDay } from "@/lib/dates";
 import { IDEA_KINDS, IDEA_KIND_COLOR, IDEA_KIND_LABEL, PRIORITY_LABEL } from "@/lib/labels";
@@ -121,7 +122,7 @@ export function DayPickerSheet({
 
   const pick = (day: string | null, close: () => void) =>
     startTransition(async () => {
-      const result = await scheduleIdea(idea.id, day);
+      const result = await safely(scheduleIdea(idea.id, day));
       if (result.ok) close();
       else setError(result.error);
     });

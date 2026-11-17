@@ -1,14 +1,17 @@
 "use client";
 
 import { useOptimistic, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { BedDouble, Check, Lightbulb, ListChecks, Plus } from "lucide-react";
 import type { ReactNode } from "react";
-import { setTodoDone } from "@/app/actions";
 import { CheckButton } from "@/components/CheckButton";
 import { TRAVEL_ICON } from "@/components/icons";
 import { NavBar } from "@/components/NavBar";
 import { SegmentedTrack, segmentClass } from "@/components/Segmented";
 import { TodoSheet } from "@/components/TodoSheet";
+import { saveOrQueue } from "@/components/QueueSync";
+import { useToast } from "@/components/Toast";
+import { useQueuedValue } from "@/lib/queue";
 import { EmptyState, GroupedList, SectionFooter, SectionHeader } from "@/components/ui";
 import { WishList, WishSheet } from "@/components/WishList";
 import { addDays, daysBetween, formatDay, formatShortDay, plural } from "@/lib/dates";
@@ -23,15 +26,28 @@ export function TodosView({
   data,
   serverToday,
   initialList,
+  initialTodoId,
+  initialWishId,
 }: {
   data: TripData;
   serverToday: string;
   initialList: ListTab;
+  initialTodoId?: string;
+  initialWishId?: string;
 }) {
+  const router = useRouter();
   const today = useToday(serverToday);
   const { trip, todos, stays, legs, ideas, wishes, cities } = data;
-  const [list, setList] = useState<ListTab>(initialList);
-  const [editing, setEditing] = useState<Editing>(null);
+  const linkedTodo = initialTodoId ? todos.find((todo) => todo.id === initialTodoId) : undefined;
+  const linkedWish = initialWishId ? wishes.find((wish) => wish.id === initialWishId) : undefined;
+  const [list, setList] = useState<ListTab>(linkedTodo ? "todos" : linkedWish ? "wish" : initialList);
+  const [editing, setEditing] = useState<Editing>(
+    linkedTodo ? { kind: "todo", todo: linkedTodo } : linkedWish ? { kind: "wish", wish: linkedWish } : null
+  );
+  const closeEditor = () => {
+    setEditing(null);
+    if (initialTodoId || initialWishId) router.replace(list === "wish" ? "/todos?list=wish" : "/todos", { scroll: false });
+  };
   const [showDone, setShowDone] = useState(false);
 
   const open = todos.filter((todo) => !todo.done);
@@ -145,11 +161,11 @@ export function TodosView({
           stays={stays}
           legs={legs}
           ideas={ideas}
-          onDone={() => setEditing(null)}
+          onDone={closeEditor}
         />
       ) : null}
       {editing?.kind === "wish" ? (
-        <WishSheet key={editing.wish?.id ?? "new"} wish={editing.wish} cities={cities} onDone={() => setEditing(null)} />
+        <WishSheet key={editing.wish?.id ?? "new"} wish={editing.wish} cities={cities} onDone={closeEditor} />
       ) : null}
     </>
   );
@@ -188,7 +204,9 @@ function TodoSection({
 
 function TodoItem({ todo, today, onEdit }: { todo: TodoRow; today: string; onEdit: () => void }) {
   const [, startTransition] = useTransition();
-  const [done, setDone] = useOptimistic(todo.done);
+  const toast = useToast();
+  const queued = useQueuedValue<boolean>(`todo:${todo.id}`);
+  const [done, setDone] = useOptimistic(queued ?? todo.done);
   const overdue = !done && todo.dueDate !== null && todo.dueDate < today;
   const soon = !done && todo.dueDate !== null && !overdue && daysBetween(today, todo.dueDate) <= 7;
   const LegIcon = todo.leg ? TRAVEL_ICON[todo.leg.mode] : null;
@@ -208,7 +226,8 @@ function TodoItem({ todo, today, onEdit }: { todo: TodoRow; today: string; onEdi
         onToggle={() =>
           startTransition(async () => {
             setDone(!done);
-            await setTodoDone(todo.id, !done);
+            const result = await saveOrQueue({ key: `todo:${todo.id}`, action: "todoDone", args: [todo.id, !done] });
+            if (!result.ok) toast({ message: result.error, tone: "bad" });
           })
         }
       />

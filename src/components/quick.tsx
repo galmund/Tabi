@@ -13,6 +13,11 @@ export function legTransitHref(leg: { mode: string; destination: string }): stri
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}&travelmode=transit`;
 }
 
+export function stayDirectionsHref(stay: { name: string; address: string | null; city: { name: string } }): string {
+  const destination = stay.address ?? `${stay.name}, ${stay.city.name}, Japan`;
+  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}&travelmode=transit`;
+}
+
 export function PinLink({ href, label }: { href: string; label: string }) {
   return (
     <a
@@ -83,8 +88,11 @@ export function CopyText({ value, children, className = "" }: { value: string; c
       className={`press-fade group inline text-left ${className}`}
     >
       {children}
+      <span className="sr-only" aria-live="polite">
+        {copied ? "Copied" : ""}
+      </span>
       {copied ? (
-        <span className="pop-in ml-1.5 inline-flex translate-y-[-2px] items-center gap-0.5 rounded-full bg-good/15 px-1.5 py-0.5 align-middle text-[12px] font-semibold text-good">
+        <span aria-hidden className="pop-in ml-1.5 inline-flex translate-y-[-2px] items-center gap-0.5 rounded-full bg-good/15 px-1.5 py-0.5 align-middle text-[12px] font-semibold text-good">
           <Check className="h-3 w-3" />
           Copied
         </span>
@@ -96,6 +104,36 @@ export function CopyText({ value, children, className = "" }: { value: string; c
 }
 
 // Rendered as a span so it can sit inside a row's <button> without nesting buttons.
+export function CopyIcon({ value, className = "" }: { value: string; className?: string }) {
+  const { copied, copy } = useCopy(value);
+
+  return (
+    <span
+      role="button"
+      tabIndex={0}
+      title="Copy name"
+      aria-label={`Copy ${value}`}
+      onClick={copy}
+      onPointerDown={(event) => event.stopPropagation()}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") copy(event);
+      }}
+      className={`pressable hit-area inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full hover:bg-fill ${
+        copied ? "text-good" : "text-faint hover:text-dim"
+      } ${className}`}
+    >
+      <span className="sr-only" aria-live="polite">
+        {copied ? "Copied" : ""}
+      </span>
+      {copied ? (
+        <Check key="copied" aria-hidden className="pop-in h-4 w-4" strokeWidth={2.6} />
+      ) : (
+        <Copy key="copy" aria-hidden className="h-[15px] w-[15px]" />
+      )}
+    </span>
+  );
+}
+
 export function CopyChip({ value, prefix = "" }: { value: string; prefix?: string }) {
   const { copied, copy } = useCopy(value);
 
@@ -112,7 +150,10 @@ export function CopyChip({ value, prefix = "" }: { value: string; prefix?: strin
         copied ? "bg-good/15 text-good" : "bg-fill text-ink"
       }`}
     >
-      <span key={copied ? "copied" : "value"} className={`truncate ${copied ? "pop-in" : ""}`}>
+      <span className="sr-only" aria-live="polite">
+        {copied ? "Copied" : ""}
+      </span>
+      <span key={copied ? "copied" : "value"} aria-hidden className={`truncate ${copied ? "pop-in" : ""}`}>
         {copied ? "Copied" : `${prefix}${value}`}
       </span>
       {copied ? <Check className="pop-in h-3.5 w-3.5 shrink-0" /> : <Copy className="h-3.5 w-3.5 shrink-0 text-dim" />}

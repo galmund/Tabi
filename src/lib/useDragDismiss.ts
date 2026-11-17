@@ -27,9 +27,11 @@ type Options = {
   onProgress?: (progress: number) => void;
   
   scaleWithDrag?: boolean;
+
+  canDismiss?: () => boolean;
 };
 
-export function useDragDismiss({ target, onDismiss, onProgress, scaleWithDrag = false }: Options) {
+export function useDragDismiss({ target, onDismiss, onProgress, scaleWithDrag = false, canDismiss }: Options) {
   const drag = useRef<{
     startY: number;
     base: number;
@@ -147,7 +149,7 @@ export function useDragDismiss({ target, onDismiss, onProgress, scaleWithDrag = 
     const height = el.offsetHeight || 1;
     const projected = offset + project(velocity);
 
-    if (projected > height * 0.5) {
+    if (projected > height * 0.5 && (canDismiss?.() ?? true)) {
       settle(height, velocity, onDismiss);
     } else {
       settle(0, velocity);

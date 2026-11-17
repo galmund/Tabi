@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import type { ActionResult } from "@/app/actions";
 import { DangerButton } from "@/components/form";
+import { safely } from "@/components/Toast";
 
 export function ConfirmDelete({
   label,
@@ -34,7 +35,7 @@ export function ConfirmDelete({
             return;
           }
           startTransition(async () => {
-            const result = await run();
+            const result = await safely(run());
             if (result.ok) onDeleted();
             else setError(result.error);
           });

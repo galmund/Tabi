@@ -2,13 +2,17 @@
 
 import { useOptimistic, useState, useTransition } from "react";
 import { ExternalLink, Gift, ShoppingBag } from "lucide-react";
-import { deleteWish, saveWish, setWishBought } from "@/app/actions";
+import { deleteWish, saveWish } from "@/app/actions";
 import { CheckButton } from "@/components/CheckButton";
 import { ConfirmDelete } from "@/components/ConfirmDelete";
 import { CityField, InputRow, NotesField, Section, SelectRow, TextRow } from "@/components/form";
 import { PhotosField } from "@/components/PhotosField";
+import { CopyIcon } from "@/components/quick";
 import { Thumb } from "@/components/rows";
 import { FormSheet } from "@/components/Sheet";
+import { saveOrQueue } from "@/components/QueueSync";
+import { useToast } from "@/components/Toast";
+import { useQueuedValue } from "@/lib/queue";
 import { EmptyState, GroupedList, SectionFooter, SectionHeader } from "@/components/ui";
 import type { Currency } from "@/generated/prisma/enums";
 import { CURRENCIES, CURRENCY_LABEL, formatMoney } from "@/lib/labels";
@@ -84,7 +88,9 @@ export function WishList({ wishes, onEdit }: { wishes: WishRow[]; onEdit: (wish:
 
 function WishItem({ wish, onEdit }: { wish: WishRow; onEdit: () => void }) {
   const [, startTransition] = useTransition();
-  const [bought, setBought] = useOptimistic(wish.bought);
+  const toast = useToast();
+  const queued = useQueuedValue<boolean>(`wish:${wish.id}`);
+  const [bought, setBought] = useOptimistic(queued ?? wish.bought);
   const detail = [
     wish.forWhom ? `For ${wish.forWhom}` : null,
     wish.city?.name,
@@ -100,13 +106,17 @@ function WishItem({ wish, onEdit }: { wish: WishRow; onEdit: () => void }) {
         onToggle={() =>
           startTransition(async () => {
             setBought(!bought);
-            await setWishBought(wish.id, !bought);
+            const result = await saveOrQueue({ key: `wish:${wish.id}`, action: "wishBought", args: [wish.id, !bought] });
+            if (!result.ok) toast({ message: result.error, tone: "bad" });
           })
         }
       />
       <button type="button" onClick={onEdit} className="flex min-w-0 flex-1 items-center gap-3 py-3 pr-4 text-left active:bg-fill">
         <span className="min-w-0 flex-1">
-          <span className={`block text-[17px] leading-tight ${bought ? "text-dim line-through" : ""}`}>{wish.name}</span>
+          <span className="flex items-center gap-1.5">
+            <span className={`truncate text-[17px] leading-tight ${bought ? "text-dim line-through" : ""}`}>{wish.name}</span>
+            <CopyIcon value={wish.name} className="-my-1.5 -ml-1" />
+          </span>
           {detail.length > 0 ? (
             <span className="tnum mt-1 block truncate text-[14px] text-dim">{detail.join(" · ")}</span>
           ) : null}

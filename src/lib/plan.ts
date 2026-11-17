@@ -114,6 +114,12 @@ export function citiesOnDay<S extends StayLike>(stays: S[], day: string, dayCiti
   return cities;
 }
 
+export function newStayHref(checkIn: string, checkOut: string, city?: string): string {
+  const params = new URLSearchParams({ add: "stay", from: checkIn, to: checkOut });
+  if (city) params.set("city", city);
+  return `/bookings?${params}`;
+}
+
 export function isOutsideTrip(trip: TripLike, from: string, to: string | null): boolean {
   return from < trip.startDate || (to ?? from) > trip.endDate;
 }
@@ -220,4 +226,42 @@ export function unplannedIn<I extends { day: string | null; cityId: string | nul
   return ideas
     .filter((idea) => !idea.day && idea.cityId && cityIds.includes(idea.cityId))
     .sort((a, b) => (a.priority === b.priority ? a.cityOrder - b.cityOrder : a.priority === "MUST" ? -1 : 1));
+}
+
+type ClashLeg = {
+  id: string;
+  origin: string;
+  destination: string;
+  departDate: string;
+  departTime: string | null;
+  arriveDate: string | null;
+  arriveTime: string | null;
+};
+
+export function timeClashes(
+  day: string,
+  ideas: { id: string; name: string; day: string | null; time: string | null }[],
+  legs: ClashLeg[]
+): Map<string, string> {
+  const clashes = new Map<string, string>();
+  const timed = ideas.filter((idea) => idea.day === day && idea.time);
+  const windows = legs.flatMap((leg) => {
+    const departs = leg.departDate === day && leg.departTime ? minutesOf(leg.departTime) : null;
+    const arrives = (leg.arriveDate ?? leg.departDate) === day && leg.arriveTime ? minutesOf(leg.arriveTime) : null;
+    if (departs === null && arrives === null) return [];
+    const start = departs ?? (leg.departDate < day ? 0 : arrives!);
+    const end = arrives ?? (leg.arriveDate && leg.arriveDate > day ? 24 * 60 : start + 1);
+    return [{ start, end, label: `${leg.origin} → ${leg.destination}` }];
+  });
+  for (const idea of timed) {
+    const at = minutesOf(idea.time!);
+    const leg = windows.find((window) => at >= window.start && at < window.end);
+    if (leg) {
+      clashes.set(idea.id, `During ${leg.label}`);
+      continue;
+    }
+    const twin = timed.find((other) => other.id !== idea.id && other.time === idea.time);
+    if (twin) clashes.set(idea.id, `Same time as ${twin.name}`);
+  }
+  return clashes;
 }

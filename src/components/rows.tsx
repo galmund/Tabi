@@ -1,5 +1,6 @@
 import { Star } from "lucide-react";
 import { IDEA_ICON, TRAVEL_COLOR, TRAVEL_ICON } from "@/components/icons";
+import { CopyIcon } from "@/components/quick";
 import { IconCircle } from "@/components/ui";
 import { formatShortDay } from "@/lib/dates";
 import { IDEA_KIND_COLOR } from "@/lib/labels";
@@ -37,10 +38,12 @@ export function LegSummary({ leg, showDate = false }: { leg: LegRow; showDate?: 
 export function IdeaSummary({
   idea,
   showCity = false,
+  copy = false,
   trailing,
 }: {
   idea: IdeaRow;
   showCity?: boolean;
+  copy?: boolean;
   trailing?: React.ReactNode;
 }) {
   const Icon = IDEA_ICON[idea.kind];
@@ -61,6 +64,7 @@ export function IdeaSummary({
           {idea.priority === "MUST" ? (
             <Star className="h-3.5 w-3.5 shrink-0 fill-yellow text-yellow" aria-label="Must-do" />
           ) : null}
+          {copy ? <CopyIcon value={idea.name} className="-my-1.5 -ml-1" /> : null}
         </p>
         {detail || trailing ? (
           <p className="tnum mt-0.5 flex items-center gap-1.5 truncate text-[14px] text-dim">

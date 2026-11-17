@@ -1,20 +1,21 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { BedDouble, Plus, TrainFront } from "lucide-react";
 import { deleteStay, setStayStatus } from "@/app/actions";
 import { LegSheet, StaySheet, type StayDefaults } from "@/components/BookingSheets";
 import { EditButton, LegDetail, StayDetail } from "@/components/DetailSheets";
 import { NavBar } from "@/components/NavBar";
-import { CopyChip } from "@/components/quick";
+import { safely, useToast } from "@/components/Toast";
+import { CopyChip, CopyIcon } from "@/components/quick";
 import { LegSummary, Thumb } from "@/components/rows";
 import { SegmentedTrack, segmentClass } from "@/components/Segmented";
-import { EmptyState, GroupedList, SectionFooter, Tag } from "@/components/ui";
+import { EmptyState, GroupedList, SectionFooter, SectionHeader, Tag } from "@/components/ui";
 import { daysBetween, formatDay, formatRange, plural } from "@/lib/dates";
 import { useToday } from "@/lib/device";
 import { formatMoney, PAYMENT_LABEL } from "@/lib/labels";
-import { isOutsideTrip, nightsOf, overlapsBooked } from "@/lib/plan";
+import { isOutsideTrip, nightsOf, overlapsBooked, tripPhase } from "@/lib/plan";
 import type { LegRow, StayRow, TripData } from "@/lib/trip";
 
 type Tab = "stays" | "travel";
@@ -31,23 +32,29 @@ export function BookingsView({
   serverToday,
   initialTab,
   initialStay,
+  initialView,
 }: {
   data: TripData;
   serverToday: string;
   initialTab: Tab;
   initialStay: StayDefaults | null;
+  initialView: { kind: "view-stay" | "view-leg"; id: string } | null;
 }) {
   const router = useRouter();
   const today = useToday(serverToday);
   const { trip, stays, legs, cities } = data;
-  const [tab, setTab] = useState<Tab>(initialStay ? "stays" : initialTab);
+  const [tab, setTab] = useState<Tab>(
+    initialStay || initialView?.kind === "view-stay" ? "stays" : initialView?.kind === "view-leg" ? "travel" : initialTab
+  );
   const [editing, setEditing] = useState<Editing>(
-    initialStay ? { kind: "stay", defaults: initialStay } : null
+    initialStay ? { kind: "stay", defaults: initialStay } : initialView
   );
 
   const close = () => {
     setEditing(null);
-    if (initialStay) router.replace("/bookings", { scroll: false });
+    if (initialStay || initialView) {
+      router.replace(initialView?.kind === "view-leg" ? "/bookings?tab=travel" : "/bookings", { scroll: false });
+    }
   };
 
   const closeEditor = () => {
@@ -64,6 +71,7 @@ export function BookingsView({
   const viewingLeg = editing?.kind === "view-leg" ? legs.find((leg) => leg.id === editing.id) : undefined;
 
   const booked = stays.filter((stay) => stay.status === "BOOKED").length;
+  const duringTrip = tripPhase(trip, today) === "during";
 
   return (
     <>
@@ -108,24 +116,27 @@ export function BookingsView({
               hint="Add the hotels and ryokans you book — or ones you're still deciding between as options."
             />
           ) : (
-            <>
-              <GroupedList inset={16 + 40 + 12}>
-                {stays.map((stay) => (
-                  <StayItem
-                    key={stay.id}
-                    stay={stay}
-                    today={today}
-                    outside={isOutsideTrip(trip, stay.checkIn, stay.checkOut)}
-                    supersededBy={stay.status === "OPTION" ? overlapsBooked(stay, stays) : undefined}
-                    onOpen={() => setEditing({ kind: "view-stay", id: stay.id })}
-                    onEdit={() => setEditing({ kind: "stay", stay })}
-                  />
-                ))}
-              </GroupedList>
-              <SectionFooter>
-                Only booked stays count towards your nights. Options for the same nights fade once one is booked.
-              </SectionFooter>
-            </>
+            <PastSplit
+              items={stays}
+              isPast={(stay) => duringTrip && stay.checkOut < today}
+              inset={16 + 40 + 12}
+              render={(stay) => (
+                <StayItem
+                  key={stay.id}
+                  stay={stay}
+                  today={today}
+                  outside={isOutsideTrip(trip, stay.checkIn, stay.checkOut)}
+                  supersededBy={stay.status === "OPTION" ? overlapsBooked(stay, stays) : undefined}
+                  onOpen={() => setEditing({ kind: "view-stay", id: stay.id })}
+                  onEdit={() => setEditing({ kind: "stay", stay })}
+                />
+              )}
+              footer={
+                <SectionFooter>
+                  Only booked stays count towards your nights. Options for the same nights fade once one is booked.
+                </SectionFooter>
+              }
+            />
           )
         ) : legs.length === 0 ? (
           <EmptyState
@@ -134,8 +145,11 @@ export function BookingsView({
             hint="Flights, shinkansen, buses and ferries — with the times exactly as printed on the ticket."
           />
         ) : (
-          <GroupedList inset={16 + 36 + 12}>
-            {legs.map((leg) => (
+          <PastSplit
+            items={legs}
+            isPast={(leg) => duringTrip && (leg.arriveDate ?? leg.departDate) < today}
+            inset={16 + 36 + 12}
+            render={(leg) => (
               <li key={leg.id} className="flex items-center pr-2">
                 <button
                   type="button"
@@ -157,8 +171,8 @@ export function BookingsView({
                 </button>
                 <EditButton label={`Edit ${leg.origin} to ${leg.destination}`} onClick={() => setEditing({ kind: "leg", leg })} />
               </li>
-            ))}
-          </GroupedList>
+            )}
+          />
         )}
       </div>
 
@@ -192,6 +206,48 @@ export function BookingsView({
         />
       ) : null}
     </>
+  );
+}
+
+function PastSplit<T>({
+  items,
+  isPast,
+  inset,
+  render,
+  footer,
+}: {
+  items: T[];
+  isPast: (item: T) => boolean;
+  inset: number;
+  render: (item: T) => ReactNode;
+  footer?: ReactNode;
+}) {
+  const [showPast, setShowPast] = useState(false);
+  const past = items.filter(isPast);
+  const upcoming = items.filter((item) => !isPast(item));
+
+  return (
+    <div className="space-y-8">
+      {upcoming.length > 0 ? (
+        <div>
+          <GroupedList inset={inset}>{upcoming.map(render)}</GroupedList>
+          {footer}
+        </div>
+      ) : null}
+      {past.length > 0 ? (
+        <section>
+          <SectionHeader
+            title="Done"
+            trailing={
+              <button type="button" onClick={() => setShowPast((value) => !value)} className="text-accent">
+                {showPast ? "Hide" : `Show ${past.length}`}
+              </button>
+            }
+          />
+          {showPast ? <GroupedList inset={inset}>{past.map(render)}</GroupedList> : null}
+        </section>
+      ) : null}
+    </div>
   );
 }
 
@@ -240,7 +296,42 @@ function StayItem({
   onEdit: () => void;
 }) {
   const [pending, startTransition] = useTransition();
+  const [armed, setArmed] = useState(false);
+  const toast = useToast();
   const nights = nightsOf(stay);
+
+  useEffect(() => {
+    if (!armed) return;
+    const timer = setTimeout(() => setArmed(false), 4000);
+    return () => clearTimeout(timer);
+  }, [armed]);
+
+  const markBooked = () =>
+    startTransition(async () => {
+      const result = await safely(setStayStatus(stay.id, "BOOKED"));
+      if (!result.ok) return toast({ message: result.error, tone: "bad" });
+      toast({
+        message: `${stay.name} is booked`,
+        action: {
+          label: "Undo",
+          run: () =>
+            void safely(setStayStatus(stay.id, "OPTION")).then((undo) => {
+              if (!undo.ok) toast({ message: undo.error, tone: "bad" });
+            }),
+        },
+      });
+    });
+
+  const remove = () => {
+    if (!armed) return setArmed(true);
+    startTransition(async () => {
+      const result = await safely(deleteStay(stay.id));
+      if (!result.ok) {
+        setArmed(false);
+        toast({ message: result.error, tone: "bad" });
+      }
+    });
+  };
   const cancelIn = stay.cancelBy ? daysBetween(today, stay.cancelBy) : null;
 
   return (
@@ -265,6 +356,7 @@ function StayItem({
           <div className="min-w-0 flex-1">
             <p className="flex items-center gap-2">
               <span className="truncate text-[17px] font-semibold leading-tight">{stay.name}</span>
+              <CopyIcon value={stay.name} className="-my-1.5 -ml-1.5" />
               {stay.status === "OPTION" ? <Tag>Option</Tag> : null}
             </p>
             <p className="tnum mt-0.5 text-[14px] text-dim">
@@ -293,16 +385,17 @@ function StayItem({
             <button
               type="button"
               disabled={pending}
-              onClick={() =>
-                startTransition(async () => {
-                  await (supersededBy ? deleteStay(stay.id) : setStayStatus(stay.id, "BOOKED"));
-                })
-              }
-              className={`pressable h-8 rounded-full px-3 text-[14px] font-semibold ${
-                supersededBy ? "bg-bad/12 text-bad hover:bg-bad/18" : "bg-accent/12 text-accent hover:bg-accent/18"
+              onClick={supersededBy ? remove : markBooked}
+              aria-live="polite"
+              className={`pressable hit-area h-8 rounded-full px-3 text-[14px] font-semibold ${
+                supersededBy
+                  ? armed
+                    ? "bg-bad text-white"
+                    : "bg-bad/12 text-bad hover:bg-bad/18"
+                  : "bg-accent/12 text-accent hover:bg-accent/18"
               }`}
             >
-              {supersededBy ? "Remove" : "Booked it"}
+              {supersededBy ? (armed ? "Delete?" : "Remove") : "Booked it"}
             </button>
           ) : null}
           <EditButton label={`Edit ${stay.name}`} onClick={onEdit} />

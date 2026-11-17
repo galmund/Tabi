@@ -1,9 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
-import { BedDouble, CalendarDays, House, Lightbulb, ListChecks, Settings } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { BedDouble, CalendarDays, House, Lightbulb, ListChecks, Search, Settings } from "lucide-react";
 
 const TABS = [
   { href: "/", label: "Home", icon: House },
@@ -14,7 +15,7 @@ const TABS = [
 ] as const;
 
 function isActive(href: string, pathname: string, sidebar: boolean) {
-  if (href === "/") return pathname === "/" || (!sidebar && pathname === "/settings");
+  if (href === "/") return pathname === "/" || (!sidebar && (pathname === "/settings" || pathname === "/search"));
   return pathname.startsWith(href);
 }
 
@@ -54,9 +55,32 @@ export function TabBar() {
   );
 }
 
+function useSearchShortcut() {
+  const router = useRouter();
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const typing = target?.closest("input, textarea, select, [contenteditable=true]");
+      const palette = event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey);
+      if (palette || (event.key === "/" && !typing && !event.metaKey && !event.ctrlKey)) {
+        if (document.querySelector("dialog[open]")) return;
+        event.preventDefault();
+        router.push("/search");
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [router]);
+}
+
 export function Sidebar({ tripName }: { tripName: string }) {
   const pathname = usePathname();
-  const items = [...TABS, { href: "/settings", label: "Settings", icon: Settings }];
+  useSearchShortcut();
+  const items = [
+    { href: "/search", label: "Search", icon: Search, hint: "⌘K" },
+    ...TABS,
+    { href: "/settings", label: "Settings", icon: Settings },
+  ];
 
   return (
     <aside className="sidebar on-sky fixed inset-y-0 left-0 z-40 hidden w-[var(--sidebar-w)] flex-col bg-sky-deep lg:flex">
@@ -85,6 +109,7 @@ export function Sidebar({ tripName }: { tripName: string }) {
               >
                 <Icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.2 : 1.8} />
                 {item.label}
+                {"hint" in item ? <kbd className="ml-auto font-sans text-[12px] text-dim">{item.hint}</kbd> : null}
               </Link>
             </li>
           );

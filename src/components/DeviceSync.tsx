@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { CloudOff } from "lucide-react";
 import { rememberTimeZone } from "@/app/actions";
 import { useIsOffline } from "@/lib/device";
 import { TIME_ZONE_COOKIE } from "@/lib/cookies";
@@ -34,17 +33,5 @@ export function DeviceSync() {
       .catch(() => {});
   }, [pathname, offline]);
 
-  if (!offline) return null;
-
-  return (
-    <div
-      className="pointer-events-none fixed inset-x-0 z-40 flex justify-center"
-      style={{ bottom: "calc(var(--tabbar-h) + var(--safe-bottom) + 10px)" }}
-    >
-      <span className="flex items-center gap-1.5 rounded-full bg-elev2 px-3.5 py-1.5 text-[13px] font-semibold text-dim shadow-[var(--shadow-lift)]">
-        <CloudOff className="h-3.5 w-3.5" />
-        Offline · showing the saved trip
-      </span>
-    </div>
-  );
+  return null;
 }

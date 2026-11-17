@@ -11,13 +11,16 @@ import {
   ListChecks,
   LogOut,
   Moon,
+  Navigation,
+  Search,
   Settings,
   StickyNote,
   TrainFront,
 } from "lucide-react";
+import { BudgetSection } from "@/components/Budget";
 import { NavBar } from "@/components/NavBar";
 import { PhotoStrip } from "@/components/PhotoViewer";
-import { CopyChip, CopyText, ideaMapsHref, legTransitHref, PinLink } from "@/components/quick";
+import { CopyChip, CopyText, ideaMapsHref, legTransitHref, PinLink, stayDirectionsHref } from "@/components/quick";
 import { RouteBar } from "@/components/RouteBar";
 import { Suggestions } from "@/components/Suggestions";
 import { IdeaSummary, LegSummary } from "@/components/rows";
@@ -38,6 +41,7 @@ import {
   comingUp,
   minutesUntil,
   missingRanges,
+  newStayHref,
   nextUp,
   type NextItem,
   nightStates,
@@ -78,13 +82,22 @@ export function HomeView({ data, serverToday }: { data: TripData; serverToday: s
         title={trip.name}
         subtitle={subtitle}
         trailing={
-          <Link
-            href="/settings"
-            aria-label="Settings"
-            className="pressable flex h-9 w-9 items-center justify-center rounded-full text-accent active:bg-fill lg:hidden"
-          >
-            <Settings className="h-[22px] w-[22px]" />
-          </Link>
+          <div className="flex items-center gap-1 lg:hidden">
+            <Link
+              href="/search"
+              aria-label="Search"
+              className="pressable flex h-9 w-9 items-center justify-center rounded-full text-accent active:bg-fill"
+            >
+              <Search className="h-[22px] w-[22px]" />
+            </Link>
+            <Link
+              href="/settings"
+              aria-label="Settings"
+              className="pressable flex h-9 w-9 items-center justify-center rounded-full text-accent active:bg-fill"
+            >
+              <Settings className="h-[22px] w-[22px]" />
+            </Link>
+          </div>
         }
       >
         {phase === "before" ? (
@@ -112,7 +125,7 @@ export function HomeView({ data, serverToday }: { data: TripData; serverToday: s
               {missing.map((range) => (
                 <li key={range.from}>
                   <Link
-                    href={`/bookings?add=stay&from=${range.from}&to=${addDays(range.to, 1)}`}
+                    href={newStayHref(range.from, addDays(range.to, 1), citiesOnDay(stays, range.from, data.dayCities).at(-1)?.name)}
                     className="flex items-center gap-3 px-4 py-2.5 active:bg-fill"
                   >
                     <StationMark number={daysBetween(trip.startDate, range.from) + 1} label="day" tone="bad" />
@@ -145,7 +158,7 @@ export function HomeView({ data, serverToday }: { data: TripData; serverToday: s
               {overdue.map((todo) => (
                 <ComingRow
                   key={`overdue-${todo.id}`}
-                  href="/todos"
+                  href={`/todos?todo=${todo.id}`}
                   icon={<ListChecks className="h-[18px] w-[18px]" />}
                   tone="bad"
                   title={todo.title}
@@ -156,7 +169,7 @@ export function HomeView({ data, serverToday }: { data: TripData; serverToday: s
                 item.kind === "cancel" ? (
                   <ComingRow
                     key={`cancel-${item.stay.id}`}
-                    href="/bookings"
+                    href={`/bookings?stay=${item.stay.id}`}
                     icon={<CalendarX className="h-[18px] w-[18px]" />}
                     tone={daysBetween(today, item.day) <= SOON_DAYS ? "orange" : "neutral"}
                     title={`Free cancellation ends · ${item.stay.name}`}
@@ -165,7 +178,7 @@ export function HomeView({ data, serverToday }: { data: TripData; serverToday: s
                 ) : (
                   <ComingRow
                     key={`todo-${item.todo.id}`}
-                    href="/todos"
+                    href={`/todos?todo=${item.todo.id}`}
                     icon={<ListChecks className="h-[18px] w-[18px]" />}
                     tone={daysBetween(today, item.day) <= SOON_DAYS ? "orange" : "neutral"}
                     title={item.todo.title}
@@ -176,6 +189,8 @@ export function HomeView({ data, serverToday }: { data: TripData; serverToday: s
             </GroupedList>
           )}
         </section>
+
+        <BudgetSection stays={stays} legs={legs} className="lg:col-span-2" />
 
         <section className="lg:col-span-2">
           <SectionHeader title="At a glance" />
@@ -221,9 +236,42 @@ function TodaySection({ data, today, dayNumber }: { data: TripData; today: strin
   const tonight = bookedStayOn(stays, today);
   const inTransit = overnightLegOn(legs, today);
   const lastDay = today === trip.endDate;
+  const stillMoving =
+    !now ||
+    todaysLegs.some(
+      (leg) =>
+        (leg.departDate === today && leg.departTime && leg.departTime > now.time) ||
+        (leg.arriveDate === today && leg.arriveTime && leg.arriveTime > now.time)
+    );
+  const headBack =
+    tonight && now && now.day === today && !stillMoving && now.time >= (tonight.checkIn === today ? tonight.checkInTime : "16:00");
 
   return (
     <>
+      {headBack && tonight ? (
+        <section>
+          <a
+            href={stayDirectionsHref(tonight)}
+            target="_blank"
+            rel="noreferrer"
+            className="card pressable flex items-center gap-3 px-4 py-3.5 hover:bg-elev2"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] bg-accent text-on-accent">
+              <Navigation className="h-5 w-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[13px] font-semibold text-dim">
+                {tonight.checkIn === today ? "Time to check in" : "Heading back?"}
+              </span>
+              <span className="block truncate text-[17px] font-semibold leading-tight">{tonight.name}</span>
+            </span>
+            <span className="shrink-0 rounded-full bg-accent/12 px-3 py-1.5 text-[14px] font-semibold text-accent">
+              Directions
+            </span>
+          </a>
+        </section>
+      ) : null}
+
       {next && now ? (
         <section>
           <SectionHeader title="Next up" trailing={countdown(minutesUntil(now, next.day, next.at))} />
@@ -254,12 +302,17 @@ function TodaySection({ data, today, dayNumber }: { data: TripData; today: strin
                 <LegSummary leg={leg} />
                 <PinLink href={legTransitHref(leg)} label={`Directions to ${leg.destination}`} />
               </div>
+              {leg.bookingRef ? (
+                <p className="flex items-center gap-2 pl-12 text-[14px] text-dim">
+                  Booking no. <CopyChip value={leg.bookingRef} />
+                </p>
+              ) : null}
               <PhotoStrip title={`${leg.origin} → ${leg.destination}`} photos={leg.photos} />
             </div>
           ))}
           {activities.map((idea) => (
             <div key={idea.id} className="flex items-center gap-1">
-              <IdeaSummary idea={idea} />
+              <IdeaSummary idea={idea} copy />
               <PinLink href={ideaMapsHref(idea)} label={`Open ${idea.name} in Google Maps`} />
             </div>
           ))}
@@ -313,7 +366,7 @@ function TodaySection({ data, today, dayNumber }: { data: TripData; today: strin
               <LegSummary leg={inTransit} />
             </Card>
           ) : (
-            <Link href={`/bookings?add=stay&from=${today}&to=${addDays(today, 1)}`}>
+            <Link href={newStayHref(today, addDays(today, 1), cities.at(-1)?.name)}>
               <Card className="flex items-center gap-3 text-[15px] text-bad">
                 <BedDouble className="h-5 w-5 shrink-0" />
                 No hotel booked for tonight — tap to add one.
@@ -364,7 +417,7 @@ function NextUpCard({ item, today }: { item: NextItem<LegRow, IdeaRow>; today: s
   return (
     <Card className="space-y-3">
       <div className="flex items-center gap-1">
-        <IdeaSummary idea={idea} showCity />
+        <IdeaSummary idea={idea} showCity copy />
         <PinLink href={ideaMapsHref(idea)} label={`Open ${idea.name} in Google Maps`} />
       </div>
       {tomorrow ? <Tag>Tomorrow</Tag> : null}

@@ -288,7 +288,7 @@ export function CityField({
                 key={city.id}
                 type="button"
                 onClick={() => setValue(active ? "" : city.name)}
-                className="pressable flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[14px] font-semibold"
+                className="pressable hit-area flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[14px] font-semibold"
                 style={{
                   color: active ? "#fff" : city.color,
                   backgroundColor: active ? city.color : `${city.color}22`,

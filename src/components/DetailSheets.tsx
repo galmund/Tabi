@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { CalendarDays, ExternalLink, Pencil, Star, Ticket } from "lucide-react";
+import { CalendarDays, CalendarPlus, ExternalLink, Pencil, Star, Ticket } from "lucide-react";
 import { FormGroup, GroupLabel } from "@/components/form";
 import { IDEA_ICON, TRAVEL_COLOR, TRAVEL_ICON } from "@/components/icons";
 import { PhotoStrip } from "@/components/PhotoViewer";
@@ -282,14 +282,16 @@ export function IdeaDetail({
             rows={[["Day", idea.day ? at(idea.day, idea.time) : "Not on a day yet"]]}
           />
 
-          {onMove && idea.day ? (
+          {onMove ? (
             <button
               type="button"
               onClick={onMove}
-              className="pressable flex h-10 w-full items-center justify-center gap-1.5 rounded-[12px] bg-fill text-[15px] font-semibold text-accent"
+              className={`pressable flex h-11 w-full items-center justify-center gap-1.5 rounded-[12px] text-[15px] font-semibold ${
+                idea.day ? "bg-fill text-accent" : "bg-accent text-on-accent"
+              }`}
             >
-              <CalendarDays className="h-4 w-4" />
-              Move to another day
+              {idea.day ? <CalendarDays className="h-4 w-4" /> : <CalendarPlus className="h-4 w-4" />}
+              {idea.day ? "Move to another day" : "Add to a day"}
             </button>
           ) : null}
 

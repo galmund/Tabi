@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { DeviceSync } from "@/components/DeviceSync";
 import { PhotoViewerProvider } from "@/components/PhotoViewer";
+import { QueueSync } from "@/components/QueueSync";
 import { Sidebar, TabBar } from "@/components/TabBar";
+import { ToastProvider } from "@/components/Toast";
 import { getThemeChoice, getTrip } from "@/lib/trip";
 import "./globals.css";
 
@@ -55,13 +57,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en" data-theme={theme === "auto" ? undefined : theme}>
       <body className="min-h-dvh">
-        <PhotoViewerProvider>
-          <Sidebar tripName={tripName} />
-          <div className="lg:pl-[var(--sidebar-w)]">
-            <main className="mx-auto w-full max-w-lg px-4 lg:max-w-5xl lg:px-8">{children}</main>
-          </div>
-          <TabBar />
-        </PhotoViewerProvider>
+        <ToastProvider>
+          <PhotoViewerProvider>
+            <Sidebar tripName={tripName} />
+            <div className="lg:pl-[var(--sidebar-w)]">
+              <main className="mx-auto w-full max-w-lg px-4 lg:max-w-5xl lg:px-8">{children}</main>
+            </div>
+            <TabBar />
+          </PhotoViewerProvider>
+          <QueueSync />
+        </ToastProvider>
         <DeviceSync />
       </body>
     </html>

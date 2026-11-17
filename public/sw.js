@@ -1,7 +1,7 @@
 const VERSION = "tabi-v2";
 const STATIC_CACHE = `${VERSION}-static`;
 const PAGE_CACHE = `${VERSION}-pages`;
-const ROUTES = ["/", "/days", "/bookings", "/ideas", "/todos", "/settings"];
+const ROUTES = ["/", "/days", "/bookings", "/ideas", "/todos", "/search", "/settings"];
 const PRECACHE = [
   "/favicon.ico",
   "/apple-touch-icon.png",

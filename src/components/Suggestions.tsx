@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { ChevronDown, Plus } from "lucide-react";
 import { scheduleIdea } from "@/app/actions";
 import { IdeaSummary } from "@/components/rows";
+import { safely } from "@/components/Toast";
 import { CityDot } from "@/components/ui";
 import { unplannedIn } from "@/lib/plan";
 import type { IdeaRow } from "@/lib/trip";
@@ -32,7 +33,7 @@ export function Suggestions({
   const add = (idea: IdeaRow) => {
     setAdded((current) => [...current, idea.id]);
     startTransition(async () => {
-      const result = await scheduleIdea(idea.id, day);
+      const result = await safely(scheduleIdea(idea.id, day));
       if (!result.ok) setAdded((current) => current.filter((id) => id !== idea.id));
     });
   };
@@ -47,7 +48,7 @@ export function Suggestions({
         disabled={pending}
         onClick={() => add(idea)}
         aria-label={`Add ${idea.name} to this day`}
-        className="pressable flex h-8 shrink-0 items-center gap-1 rounded-full bg-accent/12 px-3 text-[14px] font-semibold text-accent disabled:opacity-60"
+        className="pressable hit-area flex h-8 shrink-0 items-center gap-1 rounded-full bg-accent/12 px-3 text-[14px] font-semibold text-accent disabled:opacity-60"
       >
         <Plus className="h-4 w-4" strokeWidth={2.6} />
         Add
